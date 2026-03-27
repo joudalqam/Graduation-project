@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Trip Planner — Customize Each Day</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+
+  <!-- ============ NAVBAR ============ -->
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <a href="index.html" class="navbar-logo">
+        <svg style="width:32px;height:32px;" viewBox="0 0 36 36" fill="none">
+          <circle cx="18" cy="18" r="17" stroke="#0ABFBC" stroke-width="2"/>
+          <ellipse cx="18" cy="18" rx="8" ry="17" stroke="#0ABFBC" stroke-width="1.5"/>
+          <line x1="1" y1="18" x2="35" y2="18" stroke="#0ABFBC" stroke-width="1.5"/>
+        </svg>
+        <span class="navbar-logo-text">Trip Planner</span>
+      </a>
+
+      <ul class="navbar-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="index.html#features">Features</a></li>
+        <li><a href="index.html#contact">Contact Us</a></li>
+      </ul>
+
+      <div class="navbar-actions">
+        <button class="dark-toggle" id="darkToggle" aria-label="Toggle dark mode">
+          <svg id="moonIcon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+          <svg id="sunIcon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+        </button>
+        <button class="btn-ghost" onclick="handleSignOut()">Sign Out</button>
+        <button class="btn-primary" onclick="location.href='index.html'">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          My Account
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="customize-page">
+    <!-- ============ HERO ============ -->
+    <div class="page-hero">
+      <img src="photo-1714412192114-61dca8f15f68.jpg" alt="Travel destination" />
+      <div class="page-hero-overlay"></div>
+      <div class="page-hero-content">
+        <span class="script">Customize</span>
+        <span class="display">EACH DAY</span>
+        <div class="hero-pills" id="heroPills">
+          <!-- Filled by JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ DAY CARDS ============ -->
+    <div class="days-content" id="daysContainer">
+      <!-- Filled by JS -->
+    </div>
+
+    <!-- Generate Button -->
+    <div class="generate-btn-wrap">
+      <button class="btn-generate" id="generateBtn" onclick="handleGenerate()" style="max-width: 400px; margin: 0 auto;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/><path d="M19 3v4"/><path d="M21 5h-4"/></svg>
+        Generate My Trip Plan
+      </button>
+    </div>
+  </div>
+
+  <!-- ============ FOOTER ============ -->
+  <footer class="footer">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a href="index.html" class="navbar-logo" style="display:inline-flex; margin-bottom:0;">
+          <svg style="width:32px;height:32px;" viewBox="0 0 36 36" fill="none">
+            <circle cx="18" cy="18" r="17" stroke="#0ABFBC" stroke-width="2"/>
+            <ellipse cx="18" cy="18" rx="8" ry="17" stroke="#0ABFBC" stroke-width="1.5"/>
+            <line x1="1" y1="18" x2="35" y2="18" stroke="#0ABFBC" stroke-width="1.5"/>
+          </svg>
+          <span style="color:#fff; font-family:'DM Sans',sans-serif; font-weight:700; font-size:1.4rem;">Trip Planner</span>
+        </a>
+        <p>AI-powered personalized travel itineraries delivered straight to your WhatsApp.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Quick Links</h4>
+        <ul>
+          <li><a href="index.html">Home</a></li>
+          <li><a href="index.html#features">Features</a></li>
+          <li><a href="#">About Us</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Support</h4>
+        <ul>
+          <li><a href="#">Help Center</a></li>
+          <li><a href="#">Privacy Policy</a></li>
+          <li><a href="#">Terms of Service</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">© 2024 Trip Planner. All rights reserved.</div>
+  </footer>
+
+  <script src="js/customize.js"></script>
+</body>
+</html>
