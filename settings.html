@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Settings - Trip Planner</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <div class="navbar-inner">
+    <a href="index.html" class="navbar-logo">
+      <svg style="width:32px;height:32px;" viewBox="0 0 36 36" fill="none">
+        <circle cx="18" cy="18" r="17" stroke="#0ABFBC" stroke-width="2"/>
+        <ellipse cx="18" cy="18" rx="8" ry="17" stroke="#0ABFBC" stroke-width="1.5"/>
+        <line x1="1" y1="18" x2="35" y2="18" stroke="#0ABFBC" stroke-width="1.5"/>
+      </svg>
+      <span class="navbar-logo-text">Trip Planner</span>
+    </a>
+    <ul class="navbar-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="index.html#features">Features</a></li>
+      <li><a href="index.html#contact">Contact Us</a></li>
+    </ul>
+    <div class="navbar-actions">
+      <button class="dark-toggle" id="darkToggle" aria-label="Toggle dark mode">
+        <svg id="moonIcon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+        <svg id="sunIcon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+      </button>
+      <button class="btn-ghost" onclick="logout()">Sign Out</button>
+    </div>
+  </div>
+</nav>
+
+<!-- SETTINGS PAGE -->
+<div class="settings-page">
+  <!-- HERO -->
+  <div class="settings-hero">
+    <div class="settings-hero-inner">
+      <div class="settings-avatar" id="settingsAvatar">T</div>
+      <div class="settings-hero-info">
+        <h1 id="settingsName">Test User</h1>
+        <p id="settingsEmail">test@test.com</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="settings-content">
+    <!-- ACCOUNT -->
+    <div class="settings-card">
+      <div class="settings-card-title">👤 Account Information</div>
+      <div class="settings-row">
+        <div>
+          <div class="settings-row-label">Full Name</div>
+          <div class="settings-row-value" id="displayName">Test User</div>
+        </div>
+        <button class="btn-edit" onclick="editField('name')">Edit</button>
+      </div>
+      <div class="settings-row">
+        <div>
+          <div class="settings-row-label">Email Address</div>
+          <div class="settings-row-value" id="displayEmail">test@test.com</div>
+        </div>
+        <button class="btn-edit" onclick="editField('email')">Edit</button>
+      </div>
+      <div class="settings-row">
+        <div>
+          <div class="settings-row-label">Member Since</div>
+          <div class="settings-row-value" id="memberDate">March 2024</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TRIPS -->
+    <div class="settings-card">
+      <div class="settings-card-title">📍 My Trips</div>
+      <div class="settings-row">
+        <div>
+          <div class="settings-row-label">Saved Trips</div>
+          <div class="settings-row-value" id="savedTrips">0</div>
+        </div>
+        <button class="btn-edit" onclick="location.href='#'">View All</button>
+      </div>
+    </div>
+
+    <!-- PREFERENCES -->
+    <div class="settings-card">
+      <div class="settings-card-title">⚙️ Preferences</div>
+      <div class="settings-row">
+        <div>
+          <div class="settings-row-label">Dark Mode</div>
+          <div class="settings-row-value" id="darkModeStatus">Off</div>
+        </div>
+        <button class="btn-edit" onclick="toggleDarkMode()">Toggle</button>
+      </div>
+      <div class="settings-row">
+        <div>
+          <div class="settings-row-label">Language</div>
+          <div class="settings-row-value">English</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ACCOUNT ACTIONS -->
+    <div class="settings-card">
+      <div class="settings-card-title">⚠️ Account Actions</div>
+      <p class="danger-text">
+        Signing out will redirect you to the homepage.
+      </p>
+      <button class="btn-danger" onclick="logout()">Sign Out</button>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="footer-grid">
+    <div class="footer-brand">
+      <a href="index.html" class="navbar-logo" style="display:inline-flex; margin-bottom:0;">
+        <svg style="width:32px;height:32px;" viewBox="0 0 36 36" fill="none">
+          <circle cx="18" cy="18" r="17" stroke="#0ABFBC" stroke-width="2"/>
+          <ellipse cx="18" cy="18" rx="8" ry="17" stroke="#0ABFBC" stroke-width="1.5"/>
+          <line x1="1" y1="18" x2="35" y2="18" stroke="#0ABFBC" stroke-width="1.5"/>
+        </svg>
+        <span style="color:#fff; font-family:'DM Sans',sans-serif; font-weight:700; font-size:1.4rem;">Trip Planner</span>
+      </a>
+      <p>AI-powered personalized travel itineraries delivered straight to your WhatsApp.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Quick Links</h4>
+      <ul>
+        <li><a href="index.html">Home</a></li>
+        <li><a href="index.html#features">Features</a></li>
+        <li><a href="#">About Us</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Support</h4>
+      <ul>
+        <li><a href="#">Help Center</a></li>
+        <li><a href="#">Privacy Policy</a></li>
+        <li><a href="#">Terms of Service</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">© 2024 Trip Planner. All rights reserved.</div>
+</footer>
+
+<script>
+// Dark mode sync
+(function initDarkMode() {
+  const saved = localStorage.getItem('darkMode');
+  if (saved === 'true') {
+    document.body.classList.add('dark');
+    document.getElementById('moonIcon').style.display = 'none';
+    document.getElementById('sunIcon').style.display = 'block';
+    document.getElementById('darkModeStatus').textContent = 'On';
+  }
+})();
+
+document.getElementById('darkToggle').addEventListener('click', function () {
+  const isDark = document.body.classList.toggle('dark');
+  localStorage.setItem('darkMode', isDark);
+  document.getElementById('moonIcon').style.display = isDark ? 'none' : 'block';
+  document.getElementById('sunIcon').style.display = isDark ? 'block' : 'none';
+  document.getElementById('darkModeStatus').textContent = isDark ? 'On' : 'Off';
+});
+
+function toggleDarkMode() {
+  const isDark = document.body.classList.toggle('dark');
+  localStorage.setItem('darkMode', isDark);
+  document.getElementById('moonIcon').style.display = isDark ? 'none' : 'block';
+  document.getElementById('sunIcon').style.display = isDark ? 'block' : 'none';
+  document.getElementById('darkModeStatus').textContent = isDark ? 'On' : 'Off';
+}
+
+// Load user info from localStorage
+function loadUserInfo() {
+  const userName = localStorage.getItem('userName') || 'User';
+  const userEmail = localStorage.getItem('userEmail') || 'user@example.com';
+  const memberDate = localStorage.getItem('memberDate') || 'March 2024';
+
+  document.getElementById('settingsAvatar').textContent = userName.charAt(0).toUpperCase();
+  document.getElementById('settingsName').textContent = userName;
+  document.getElementById('settingsEmail').textContent = userEmail;
+  document.getElementById('displayName').textContent = userName;
+  document.getElementById('displayEmail').textContent = userEmail;
+  document.getElementById('memberDate').textContent = memberDate;
+}
+
+function editField(field) {
+  const value = prompt('Enter new ' + field + ':');
+  if (value) {
+    if (field === 'name') {
+      localStorage.setItem('userName', value);
+      document.getElementById('settingsName').textContent = value;
+      document.getElementById('settingsAvatar').textContent = value.charAt(0).toUpperCase();
+      document.getElementById('displayName').textContent = value;
+    } else if (field === 'email') {
+      localStorage.setItem('userEmail', value);
+      document.getElementById('settingsEmail').textContent = value;
+      document.getElementById('displayEmail').textContent = value;
+    }
+  }
+}
+
+function logout() {
+  localStorage.removeItem('isLoggedIn');
+  localStorage.removeItem('userName');
+  localStorage.removeItem('userEmail');
+  localStorage.removeItem('userId');
+  localStorage.removeItem('token');
+  location.href = 'index.html';
+}
+
+document.addEventListener('DOMContentLoaded', loadUserInfo);
+</script>
+
+</body>
+</html>
