@@ -33,12 +33,15 @@ const fetchPlacesFromGoogle = async (
   const results = response.data.results || [];
 
   return results.map((place) => ({
-    name: place.name,
-    address: place.formatted_address,
-    rating: place.rating || null,
-    totalRatings: place.user_ratings_total || 0,
-    location: place.geometry?.location || null,
-    placeId: place.place_id,
+    name: place.name || "Unknown place",
+    address: place.formatted_address || "No address available",
+    rating: place.rating ?? null,
+    totalRatings: place.user_ratings_total ?? 0,
+    location: {
+      lat: place.geometry?.location?.lat ?? null,
+      lng: place.geometry?.location?.lng ?? null,
+    },
+    placeId: place.place_id || null,
     types: place.types || [],
   }));
 };
@@ -72,13 +75,16 @@ const fetchPlaceDetailsFromGoogle = async (placeId) => {
   const place = response.data.result;
 
   return {
-    name: place.name,
-    address: place.formatted_address,
+    name: place.name || "Unknown place",
+    address: place.formatted_address || "No address available",
     phoneNumber: place.formatted_phone_number || null,
     website: place.website || null,
-    rating: place.rating || null,
-    totalRatings: place.user_ratings_total || 0,
-    location: place.geometry?.location || null,
+    rating: place.rating ?? null,
+    totalRatings: place.user_ratings_total ?? 0,
+    location: {
+      lat: place.geometry?.location?.lat ?? null,
+      lng: place.geometry?.location?.lng ?? null,
+    },
     openingHours: place.opening_hours?.weekday_text || [],
     googleMapsUrl: place.url || null,
     photos:

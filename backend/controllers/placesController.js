@@ -32,6 +32,9 @@ const getPlaces = async (req, res) => {
       type: selectedType,
       count: places.length,
       places,
+      message: places.length
+        ? "Places fetched successfully"
+        : "No places found",
     });
   } catch (error) {
     console.error("Error in getPlaces:", error.message);
@@ -39,7 +42,6 @@ const getPlaces = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Failed to fetch places",
-      error: error.message,
     });
   }
 };
