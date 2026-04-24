@@ -15,6 +15,8 @@ app.use("/api/trips", require("./routes/trips"));
 app.use("/api/ai", require("./routes/ai"));
 app.use("/api/whatsapp", require("./routes/whatsapp"));
 
+
+
 app.get("/", (req, res) => {
   res.json({ message: "Trip Planner API is running!" });
 });
