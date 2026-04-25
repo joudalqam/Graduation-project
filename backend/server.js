@@ -5,29 +5,36 @@ require("dotenv").config();
 
 const app = express();
 
-// Middleware
-app.use(cors());
+// --- 1. FIXED CORS ---
+// This allows your Live Server (port 5500) to talk to this API (port 5000)
+app.use(cors({
+    origin: "*", // During development, this allows all connections
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "x-auth-token"]
+}));
+
 app.use(express.json());
 
-// Routes - Using the files we updated above
+// Routes
 app.use("/api/auth", require("./routes/auth"));
 app.use("/api/trips", require("./routes/trips"));
 app.use("/api/ai", require("./routes/ai"));
 app.use("/api/whatsapp", require("./routes/whatsapp"));
 
-
-
 app.get("/", (req, res) => {
   res.json({ message: "Trip Planner API is running!" });
 });
 
-// Database Connection
+// --- 2. FIXED DATABASE & LISTEN ---
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {
     console.log("✅ MongoDB connected!");
     const PORT = process.env.PORT || 5000;
-    app.listen(PORT, () => {
+    
+    // Changing this to '0.0.0.0' fixes the "Connection Refused" error in WSL
+    app.listen(PORT, "0.0.0.0", () => {
       console.log(`🚀 Server running on port ${PORT}`);
+      console.log(`🔗 Frontend should call: http://127.0.0.1:${PORT}`);
     });
   })
   .catch(err => {
