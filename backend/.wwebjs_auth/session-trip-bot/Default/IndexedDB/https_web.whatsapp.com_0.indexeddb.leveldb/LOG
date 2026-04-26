@@ -1,0 +1,87 @@
+2026/04/26-17:00:19.458 2969 Reusing MANIFEST /mnt/c/Users/MCC/Downloads/gradProject/backend/.wwebjs_auth/session-trip-bot/Default/IndexedDB/https_web.whatsapp.com_0.indexeddb.leveldb/MANIFEST-000001
+2026/04/26-17:00:19.585 2969 Recovering log #2110
+2026/04/26-17:00:19.595 2969 Reusing old log /mnt/c/Users/MCC/Downloads/gradProject/backend/.wwebjs_auth/session-trip-bot/Default/IndexedDB/https_web.whatsapp.com_0.indexeddb.leveldb/002110.log 
+2026/04/26-17:00:24.573 296e Compacting 1@1 + 6@2 files
+2026/04/26-17:00:30.494 296e Generated table #2116@1: 82673 keys, 2231985 bytes
+2026/04/26-17:00:34.655 296e Generated table #2117@1: 55824 keys, 2274329 bytes
+2026/04/26-17:00:42.255 296e Generated table #2118@1: 62455 keys, 2225111 bytes
+2026/04/26-17:00:48.938 296e Generated table #2119@1: 47122 keys, 2211559 bytes
+2026/04/26-17:00:53.189 296e Generated table #2120@1: 14041 keys, 2164232 bytes
+2026/04/26-17:00:56.057 296e Generated table #2121@1: 2292 keys, 2149091 bytes
+2026/04/26-17:00:56.172 296e Generated table #2122@1: 283 keys, 257364 bytes
+2026/04/26-17:00:56.172 296e Compacted 1@1 + 6@2 files => 13513671 bytes
+2026/04/26-17:00:56.178 296e compacted to: files[ 0 2 29 0 0 0 0 ]
+2026/04/26-17:00:56.257 296e Delete type=2 #2090
+2026/04/26-17:00:56.258 296e Delete type=2 #2091
+2026/04/26-17:00:56.260 296e Delete type=2 #2092
+2026/04/26-17:00:56.262 296e Delete type=2 #2093
+2026/04/26-17:00:56.264 296e Delete type=2 #2094
+2026/04/26-17:00:56.266 296e Delete type=2 #2095
+2026/04/26-17:00:56.268 296e Delete type=2 #2112
+2026/04/26-17:00:57.182 296e Compacting 1@1 + 10@2 files
+2026/04/26-17:00:58.877 296e Generated table #2123@1: 11868 keys, 2173271 bytes
+2026/04/26-17:01:02.190 296e Generated table #2124@1: 29309 keys, 2259532 bytes
+2026/04/26-17:01:06.966 296e Generated table #2125@1: 25099 keys, 2276953 bytes
+2026/04/26-17:01:10.472 296e Generated table #2126@1: 25210 keys, 2269071 bytes
+2026/04/26-17:01:12.513 296e Generated table #2127@1: 25950 keys, 2192602 bytes
+2026/04/26-17:01:15.150 296e Level-0 table #2130: started
+2026/04/26-17:01:16.220 296e Level-0 table #2130: 1216992 bytes OK
+2026/04/26-17:01:16.325 296e Delete type=0 #2110
+2026/04/26-17:01:17.299 296e Generated table #2128@1: 17556 keys, 2279904 bytes
+2026/04/26-17:01:18.381 296e Generated table #2131@1: 12353 keys, 2153236 bytes
+2026/04/26-17:01:20.886 296e Generated table #2132@1: 9078 keys, 2133042 bytes
+2026/04/26-17:01:22.504 296e Generated table #2133@1: 90569 keys, 2239373 bytes
+2026/04/26-17:01:24.038 296e Generated table #2134@1: 102145 keys, 2227127 bytes
+2026/04/26-17:01:24.039 296e Compacted 1@1 + 10@2 files => 22204111 bytes
+2026/04/26-17:01:24.043 296e compacted to: files[ 1 1 29 0 0 0 0 ]
+2026/04/26-17:01:24.078 296e Compacting 1@0 + 1@1 files
+2026/04/26-17:01:25.013 296e Generated table #2135@0: 21530 keys, 443690 bytes
+2026/04/26-17:01:25.562 296e Generated table #2136@0: 5645 keys, 306298 bytes
+2026/04/26-17:01:25.595 296e Generated table #2137@0: 346 keys, 11343 bytes
+2026/04/26-17:01:25.596 296e Compacted 1@0 + 1@1 files => 761331 bytes
+2026/04/26-17:01:25.602 296e compacted to: files[ 0 3 29 0 0 0 0 ]
+2026/04/26-17:01:25.682 296e Delete type=2 #2097
+2026/04/26-17:01:25.684 296e Delete type=2 #2098
+2026/04/26-17:01:25.685 296e Delete type=2 #2099
+2026/04/26-17:01:25.687 296e Delete type=2 #2100
+2026/04/26-17:01:25.688 296e Delete type=2 #2101
+2026/04/26-17:01:25.690 296e Delete type=2 #2102
+2026/04/26-17:01:25.691 296e Delete type=2 #2103
+2026/04/26-17:01:25.693 296e Delete type=2 #2104
+2026/04/26-17:01:25.694 296e Delete type=2 #2105
+2026/04/26-17:01:25.695 296e Delete type=2 #2106
+2026/04/26-17:01:25.697 296e Delete type=2 #2113
+2026/04/26-17:01:25.698 296e Delete type=2 #2114
+2026/04/26-17:01:25.699 296e Delete type=2 #2130
+2026/04/26-17:01:26.180 296e Compacting 1@1 + 11@2 files
+2026/04/26-17:01:29.057 296e Generated table #2138@1: 84371 keys, 2234106 bytes
+2026/04/26-17:01:30.952 296e Generated table #2139@1: 56171 keys, 2274810 bytes
+2026/04/26-17:01:35.508 296e Generated table #2140@1: 62187 keys, 2225140 bytes
+2026/04/26-17:01:39.846 296e Generated table #2141@1: 47412 keys, 2212748 bytes
+2026/04/26-17:01:42.741 296e Generated table #2142@1: 14160 keys, 2163684 bytes
+2026/04/26-17:01:45.339 296e Generated table #2143@1: 2293 keys, 2148407 bytes
+2026/04/26-17:01:48.020 296e Generated table #2144@1: 2104 keys, 2151853 bytes
+2026/04/26-17:01:51.226 296e Generated table #2145@1: 2439 keys, 2156385 bytes
+2026/04/26-17:01:53.646 296e Generated table #2146@1: 2329 keys, 2157377 bytes
+2026/04/26-17:01:54.898 296e Generated table #2147@1: 1746 keys, 1570566 bytes
+2026/04/26-17:01:54.898 296e Compacted 1@1 + 11@2 files => 21295076 bytes
+2026/04/26-17:01:54.904 296e compacted to: files[ 0 2 28 0 0 0 0 ]
+2026/04/26-17:01:55.856 296e Compacting 1@1 + 10@2 files
+2026/04/26-17:01:58.469 296e Generated table #2148@1: 11897 keys, 2173418 bytes
+2026/04/26-17:02:02.204 296e Level-0 table #2151: started
+2026/04/26-17:02:04.039 296e Level-0 table #2151: 1270164 bytes OK
+2026/04/26-17:02:04.297 296e Delete type=2 #2063
+2026/04/26-17:02:04.300 296e Delete type=2 #2064
+2026/04/26-17:02:04.306 296e Delete type=2 #2065
+2026/04/26-17:02:04.313 296e Delete type=2 #2096
+2026/04/26-17:02:04.320 296e Delete type=2 #2116
+2026/04/26-17:02:04.327 296e Delete type=2 #2117
+2026/04/26-17:02:04.334 296e Delete type=2 #2118
+2026/04/26-17:02:04.338 296e Delete type=2 #2119
+2026/04/26-17:02:04.342 296e Delete type=2 #2120
+2026/04/26-17:02:04.345 296e Delete type=2 #2121
+2026/04/26-17:02:04.349 296e Delete type=2 #2122
+2026/04/26-17:02:04.350 296e Delete type=0 #2129
+2026/04/26-17:02:04.352 296e Delete type=2 #2135
+2026/04/26-17:02:07.424 296e Generated table #2149@1: 29306 keys, 2260618 bytes
+2026/04/26-17:02:14.175 296e Generated table #2152@1: 25103 keys, 2277299 bytes
