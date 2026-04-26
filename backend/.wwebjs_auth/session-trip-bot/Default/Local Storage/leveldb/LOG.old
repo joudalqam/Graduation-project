@@ -1,0 +1,6 @@
+2026/04/26-16:55:16.776 2852 Reusing MANIFEST /mnt/c/Users/MCC/Downloads/gradProject/backend/.wwebjs_auth/session-trip-bot/Default/Local Storage/leveldb/MANIFEST-000001
+2026/04/26-16:55:16.807 2852 Recovering log #4
+2026/04/26-16:55:16.815 2852 Reusing old log /mnt/c/Users/MCC/Downloads/gradProject/backend/.wwebjs_auth/session-trip-bot/Default/Local Storage/leveldb/000004.log 
+2026/04/26-16:58:17.742 2855 Level-0 table #8: started
+2026/04/26-16:58:17.790 2855 Level-0 table #8: 13853 bytes OK
+2026/04/26-16:58:17.889 2855 Delete type=0 #4
