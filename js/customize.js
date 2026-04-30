@@ -150,13 +150,17 @@ function selectVibe(dayNum, vibe) {
 }
 
 function handleGenerate() {
-  // If any day has no vibe, default to travel style
   dayPreferences.forEach(pref => {
-    if (!pref.vibe) pref.vibe = tripData.travelStyle || 'adventure';
-  });
+    if (!pref.vibe) pref.vibe = 'adventure'
+  })
 
-  sessionStorage.setItem('dayPreferences', JSON.stringify(dayPreferences));
-  location.href = 'result.html';
+  sessionStorage.setItem('dayPreferences', JSON.stringify(dayPreferences))
+
+  showLoading('AI is generating your trip...', 'Creating the perfect day-by-day itinerary for you')
+
+  setTimeout(() => {
+    location.href = 'result.html'
+  }, 2500)
 }
 
 function handleSignOut() {
@@ -185,3 +189,5 @@ document.addEventListener('DOMContentLoaded', () => {
   init();
   setTimeout(setupReveal, 100);
 });
+
+<script src="js/utils.js"></script>
