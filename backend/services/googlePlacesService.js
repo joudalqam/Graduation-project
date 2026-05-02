@@ -37,6 +37,7 @@ const fetchPlacesFromGoogle = async (
     address: place.formatted_address || "No address available",
     rating: place.rating ?? null,
     totalRatings: place.user_ratings_total ?? 0,
+    priceLevel: place.price_level ?? null,
     location: {
       lat: place.geometry?.location?.lat ?? null,
       lng: place.geometry?.location?.lng ?? null,
@@ -59,7 +60,7 @@ const fetchPlaceDetailsFromGoogle = async (placeId) => {
       params: {
         place_id: placeId,
         fields:
-          "name,formatted_address,formatted_phone_number,website,rating,user_ratings_total,geometry,opening_hours,photos,url",
+          "name,formatted_address,formatted_phone_number,website,rating,user_ratings_total,price_level,geometry,opening_hours,photos,url",
         key: apiKey,
       },
     },
@@ -81,6 +82,7 @@ const fetchPlaceDetailsFromGoogle = async (placeId) => {
     website: place.website || null,
     rating: place.rating ?? null,
     totalRatings: place.user_ratings_total ?? 0,
+    priceLevel: place.price_level ?? null,
     location: {
       lat: place.geometry?.location?.lat ?? null,
       lng: place.geometry?.location?.lng ?? null,

@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import placesRoutes from "./routes/placesRoutes.js";
+import itineraryRoutes from "./routes/itineraryRoutes.js";
 import { notFound, errorHandler } from "./middlewares/errorMiddleware.js";
 
 dotenv.config();
@@ -19,6 +20,7 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/places", placesRoutes);
+app.use("/api/itinerary", itineraryRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
