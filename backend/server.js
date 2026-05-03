@@ -1,9 +1,15 @@
-const express = require("express");
-const mongoose = require("mongoose");
-const cors = require("cors");
-require("dotenv").config();
+import express from "express";
+import mongoose from "mongoose";
+import cors from "cors";
+import dotenv from "dotenv";
+import { createRequire } from "module";
+import { startReservationBot } from "./whatsapp-bot.js";
+import placesRoutes from "./routes/placesRoutes.js";
+import itineraryRoutes from "./routes/itineraryRoutes.js";
+import { notFound, errorHandler } from "./middlewares/errorMiddleware.js";
 
-const { startReservationBot } = require('./whatsapp-bot');
+dotenv.config();
+const require = createRequire(import.meta.url);
 
 const app = express();
 
@@ -14,65 +20,69 @@ app.use(express.json());
 app.use("/api/auth", require("./routes/auth"));
 app.use("/api/trips", require("./routes/trips"));
 app.use("/api/ai", require("./routes/ai"));
+app.use("/api/places", placesRoutes);
+app.use("/api/itinerary", itineraryRoutes);
 
 app.get("/", (req, res) => {
   res.json({ message: "API running" });
 });
 
 // 🔥 TEST ROUTE (IMPORTANT)
-app.get('/test-bot', async (req, res) => {
+app.get("/test-bot", async (req, res) => {
   try {
-    await startReservationBot('9627XXXXXXXX', 'Amman', [
-      { name: 'Garden Café', time: '10:00 AM', rating: 4.5 }
-    ])
-    res.send('Test triggered')
+    await startReservationBot("9627XXXXXXXX", "Amman", [
+      { name: "Garden Café", time: "10:00 AM", rating: 4.5 },
+    ]);
+    res.send("Test triggered");
   } catch (err) {
-    console.error(err)
-    res.status(500).send('Error')
+    console.error(err);
+    res.status(500).send("Error");
   }
 });
 
 // MAIN ROUTE
-app.post('/api/whatsapp/reserve', async (req, res) => {
+app.post("/api/whatsapp/reserve", async (req, res) => {
   try {
-    console.log("📩 Incoming:", req.body)
+    console.log("📩 Incoming:", req.body);
 
-    const { phone, destination, itinerary } = req.body
+    const { phone, destination, itinerary } = req.body;
 
-    const reservablePlaces = []
-    const bookableTypes = ['Breakfast', 'Lunch', 'Dinner', 'Spa', 'Class']
+    const reservablePlaces = [];
+    const bookableTypes = ["Breakfast", "Lunch", "Dinner", "Spa", "Class"];
 
-    itinerary.forEach(day => {
-      day.activities?.forEach(act => {
+    itinerary.forEach((day) => {
+      day.activities?.forEach((act) => {
         if (bookableTypes.includes(act.type)) {
           reservablePlaces.push({
             name: act.name,
             time: act.time,
-            rating: act.rating
-          })
+            rating: act.rating,
+          });
         }
-      })
-    })
+      });
+    });
 
-    await startReservationBot(phone, destination, reservablePlaces)
+    await startReservationBot(phone, destination, reservablePlaces);
 
     res.json({
       message: "✅ Bot started!",
-      count: reservablePlaces.length
-    })
-
+      count: reservablePlaces.length,
+    });
   } catch (err) {
-    console.error(err)
-    res.status(500).json({ message: err.message })
+    console.error(err);
+    res.status(500).json({ message: err.message });
   }
 });
 
+// ERROR MIDDLEWARE
+app.use(notFound);
+app.use(errorHandler);
+
 // DB
-mongoose.connect(process.env.MONGO_URI)
+mongoose
+  .connect(process.env.MONGO_URI)
   .then(() => {
-    console.log("✅ MongoDB connected")
-    app.listen(5000, "0.0.0.0", () =>
-      console.log("🚀 Server running on 5000")
-    )
+    console.log("✅ MongoDB connected");
+    app.listen(5000, "0.0.0.0", () => console.log("🚀 Server running on 5000"));
   })
-  .catch(err => console.error(err))
+  .catch((err) => console.error(err));

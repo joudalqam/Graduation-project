@@ -1,5 +1,6 @@
-const { Client, LocalAuth } = require('whatsapp-web.js')
-const qrcode = require('qrcode-terminal')
+import pkg from 'whatsapp-web.js'
+const { Client, LocalAuth } = pkg
+import qrcode from 'qrcode-terminal'
 
 // 🔥 Debug errors
 process.on('unhandledRejection', err => console.error('❌ Unhandled:', err))
@@ -115,4 +116,4 @@ async function startReservationBot(phone, destination, places) {
 
 client.initialize()
 
-module.exports = { startReservationBot }
+export { startReservationBot }

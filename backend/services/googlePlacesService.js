@@ -1,5 +1,11 @@
 import axios from "axios";
 
+const normalizeCategory = (requestedType) => {
+  if (requestedType === "restaurant") return "restaurant";
+  if (requestedType === "cafe") return "cafe";
+  return "attraction";
+};
+
 const fetchPlacesFromGoogle = async (
   destination,
   type = "tourist_attraction",
@@ -31,8 +37,11 @@ const fetchPlacesFromGoogle = async (
   }
 
   const results = response.data.results || [];
+  const category = normalizeCategory(type);
 
   return results.map((place) => ({
+    id: place.place_id || null,
+    placeId: place.place_id || null,
     name: place.name || "Unknown place",
     address: place.formatted_address || "No address available",
     rating: place.rating ?? null,
@@ -42,7 +51,7 @@ const fetchPlacesFromGoogle = async (
       lat: place.geometry?.location?.lat ?? null,
       lng: place.geometry?.location?.lng ?? null,
     },
-    placeId: place.place_id || null,
+    type: category,
     types: place.types || [],
   }));
 };

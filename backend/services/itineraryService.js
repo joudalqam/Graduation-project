@@ -16,21 +16,29 @@ const dailyTimeSlots = [
   },
 ];
 
-const formatPlaceForItinerary = (place) => {
+const normalizeCategory = (activityType) => {
+  if (activityType === "restaurant") return "restaurant";
+  if (activityType === "cafe") return "cafe";
+  return "attraction";
+};
+
+const formatPlaceForItinerary = (place, activityType) => {
   if (!place) return null;
 
   return {
+    id: place.id || place.placeId || null,
+    placeId: place.placeId || place.id || null,
     name: place.name,
     address: place.address,
     rating: place.rating,
     totalRatings: place.totalRatings,
     priceLevel: place.priceLevel,
-    distanceKm: place.distanceKm,
-    rankingScore: place.rankingScore,
-    rankingReasons: place.rankingReasons,
+    distanceKm: place.distanceKm ?? null,
+    rankingScore: place.rankingScore ?? null,
+    rankingReasons: place.rankingReasons || [],
     location: place.location,
-    placeId: place.placeId,
-    types: place.types,
+    type: place.type || normalizeCategory(activityType),
+    types: place.types || [],
   };
 };
 
@@ -73,7 +81,7 @@ const buildDailyItinerary = (
       time: slot.time,
       activityType: slot.activityType,
       title: slot.label,
-      place: formatPlaceForItinerary(place),
+      place: formatPlaceForItinerary(place, slot.activityType),
     };
   });
 

@@ -1,8 +1,13 @@
 // =========================================
 // AI Trip Planner - Trip Result Page
+// All data comes dynamically from the backend
+// (Google Places API + ranking + itinerary services).
+// No mock / hardcoded activity data is used.
 // =========================================
 
-// Dark mode sync
+const API_BASE_URL = "http://localhost:3000";
+
+// ---------- Dark mode ----------
 (function initDarkMode() {
   const saved = localStorage.getItem("darkMode");
   if (saved === "true") {
@@ -19,126 +24,61 @@ document.getElementById("darkToggle").addEventListener("click", function () {
   document.getElementById("sunIcon").style.display = isDark ? "block" : "none";
 });
 
-// Mock itinerary data
-const MOCK_ACTIVITIES = {
-  adventure: [
-    {
-      time: "8:00 AM",
-      type: "Breakfast",
-      name: "Mountain Café",
-      rating: 4.5,
-      price: "$",
-    },
-    {
-      time: "10:00 AM",
-      type: "Hike",
-      name: "National Park Trail",
-      rating: 4.8,
-      price: "$",
-    },
-    {
-      time: "1:00 PM",
-      type: "Lunch",
-      name: "Trail Bistro",
-      rating: 4.6,
-      price: "$$",
-    },
-    {
-      time: "3:00 PM",
-      type: "Visit",
-      name: "Summit Viewpoint",
-      rating: 4.9,
-      price: "Free",
-    },
-    {
-      time: "7:00 PM",
-      type: "Dinner",
-      name: "Alpine Restaurant",
-      rating: 4.7,
-      price: "$$$",
-    },
-  ],
-  food: [
-    {
-      time: "9:00 AM",
-      type: "Breakfast",
-      name: "Local Bakery",
-      rating: 4.4,
-      price: "$",
-    },
-    {
-      time: "11:00 AM",
-      type: "Food Tour",
-      name: "City Food Walking Tour",
-      rating: 4.8,
-      price: "$$",
-    },
-    {
-      time: "2:00 PM",
-      type: "Lunch",
-      name: "Famous Street Food Market",
-      rating: 4.7,
-      price: "$",
-    },
-    {
-      time: "5:00 PM",
-      type: "Class",
-      name: "Cooking Workshop",
-      rating: 4.9,
-      price: "$$$",
-    },
-    {
-      time: "8:00 PM",
-      type: "Dinner",
-      name: "Michelin Star Restaurant",
-      rating: 4.8,
-      price: "$$$$",
-    },
-  ],
-  relaxing: [
-    {
-      time: "10:00 AM",
-      type: "Breakfast",
-      name: "Garden Café",
-      rating: 4.5,
-      price: "$",
-    },
-    {
-      time: "11:30 AM",
-      type: "Leisure",
-      name: "City Gardens & Park",
-      rating: 4.7,
-      price: "Free",
-    },
-    {
-      time: "2:00 PM",
-      type: "Lunch",
-      name: "Riverside Bistro",
-      rating: 4.6,
-      price: "$$",
-    },
-    {
-      time: "4:00 PM",
-      type: "Spa",
-      name: "Wellness & Spa Center",
-      rating: 4.8,
-      price: "$$$",
-    },
-    {
-      time: "7:30 PM",
-      type: "Dinner",
-      name: "Sunset Terrace",
-      rating: 4.7,
-      price: "$$",
-    },
-  ],
-};
-
-const DAY_TYPES = ["Adventure", "Food", "Relaxing"];
-
+// ---------- State ----------
 let tripData = null;
 let dayPreferences = [];
+let itineraryData = null;     // backend itinerary response
+let flatPlaces = [];          // flattened ordered list of every activity place
+let map = null;
+let infoWindow = null;
+let markers = [];             // google.maps.Marker[] aligned with flatPlaces
+let routeLines = [];          // one polyline per day
 
+// ---------- Helpers: map frontend prefs -> backend preferences ----------
+
+// travelStyle (adventure | food | relaxing) -> backend tripType
+function mapTravelStyleToTripType(style) {
+  switch ((style || "").toLowerCase()) {
+    case "adventure":
+      return "adventure";
+    case "food":
+      return "cultural";
+    case "relaxing":
+      return "relaxation";
+    default:
+      return null;
+  }
+}
+
+// Convert raw budget number entered by user into low|medium|high
+// using per-person-per-day spend.
+function mapBudgetToCategory(totalBudget, days, people) {
+  const total = Number(totalBudget);
+  const d = Math.max(Number(days) || 1, 1);
+  const p = Math.max(Number(people) || 1, 1);
+
+  if (Number.isNaN(total) || total <= 0) return null;
+
+  const perPersonPerDay = total / d / p;
+
+  if (perPersonPerDay < 50) return "low";
+  if (perPersonPerDay <= 150) return "medium";
+  return "high";
+}
+
+// Use the dominant vibe across days as the trip-level tripType.
+function pickDominantTripType(prefs, fallback) {
+  if (!Array.isArray(prefs) || prefs.length === 0) return fallback;
+  const counts = {};
+  prefs.forEach((p) => {
+    if (!p?.vibe) return;
+    counts[p.vibe] = (counts[p.vibe] || 0) + 1;
+  });
+  const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+  return top ? mapTravelStyleToTripType(top[0]) : fallback;
+}
+
+// ---------- Init ----------
 function init() {
   const rawTrip = sessionStorage.getItem("tripData");
   const rawPrefs = sessionStorage.getItem("dayPreferences");
@@ -153,7 +93,6 @@ function init() {
 
   const days = parseInt(tripData.days) || 3;
 
-  // If no preferences, generate from travel style
   if (!dayPreferences.length) {
     dayPreferences = Array.from({ length: days }, (_, i) => ({
       day: i + 1,
@@ -163,9 +102,11 @@ function init() {
 
   renderHeroPills();
   renderTripSummary();
-  renderItinerary();
+  renderItineraryLoading();
+  fetchAndRenderItinerary();
 }
 
+// ---------- Header & summary ----------
 function renderHeroPills() {
   document.getElementById("heroPills").innerHTML = `
     <div class="hero-pill">
@@ -217,74 +158,444 @@ function renderTripSummary() {
   `;
 }
 
+// ---------- Itinerary fetch ----------
+function renderItineraryLoading() {
+  const section = document.getElementById("itinerarySection");
+  section.innerHTML = `
+    <div class="day-plan-card">
+      <div class="day-plan-header">
+        <div class="day-circle">…</div>
+        <div>
+          <div class="day-plan-title">Generating your trip…</div>
+          <span class="day-badge">Live data</span>
+        </div>
+      </div>
+      <p style="margin-top:12px; color:#64748B;">
+        Fetching ranked places from Google Places based on your destination, budget and trip style.
+      </p>
+    </div>
+  `;
+}
+
+function renderItineraryError(message) {
+  const section = document.getElementById("itinerarySection");
+  section.innerHTML = `
+    <div class="day-plan-card">
+      <div class="day-plan-header">
+        <div class="day-circle">!</div>
+        <div>
+          <div class="day-plan-title">Could not generate itinerary</div>
+          <span class="day-badge">Error</span>
+        </div>
+      </div>
+      <p style="margin-top:12px; color:#dc2626;">${message}</p>
+    </div>
+  `;
+}
+
+async function fetchAndRenderItinerary() {
+  try {
+    const tripType =
+      pickDominantTripType(dayPreferences, mapTravelStyleToTripType(tripData.travelStyle)) ||
+      undefined;
+
+    const budget = mapBudgetToCategory(
+      tripData.budget,
+      tripData.days,
+      tripData.people,
+    );
+
+    const payload = {
+      destination: tripData.city,
+      tripDuration: parseInt(tripData.days) || 1,
+      travelers: parseInt(tripData.people) || 1,
+    };
+
+    if (budget) payload.budget = budget;
+    if (tripType) payload.tripType = tripType;
+
+    const response = await fetch(`${API_BASE_URL}/api/itinerary/generate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || !data.success || !Array.isArray(data.itinerary)) {
+      const msg = data?.message || `Request failed (${response.status})`;
+      renderItineraryError(msg);
+      return;
+    }
+
+    itineraryData = data.itinerary;
+    flatPlaces = flattenItineraryPlaces(itineraryData);
+
+    renderItinerary();
+    renderMapFromItinerary();
+  } catch (error) {
+    console.error("Error fetching itinerary:", error);
+    renderItineraryError(
+      "Could not reach the server. Make sure the backend is running on " +
+        API_BASE_URL +
+        ".",
+    );
+  }
+}
+
+// Walk the days/activities and produce an ordered list of
+// { dayIndex, activityIndex, day, time, activityType, title, place, globalIndex }.
+function flattenItineraryPlaces(itinerary) {
+  const flat = [];
+  let globalIndex = 0;
+
+  itinerary.forEach((day, dayIndex) => {
+    day.activities.forEach((activity, activityIndex) => {
+      if (
+        !activity?.place ||
+        activity.place.location?.lat == null ||
+        activity.place.location?.lng == null
+      ) {
+        return;
+      }
+
+      flat.push({
+        dayIndex,
+        activityIndex,
+        day: day.day,
+        time: activity.time,
+        activityType: activity.activityType,
+        title: activity.title,
+        place: activity.place,
+        globalIndex,
+      });
+      globalIndex += 1;
+    });
+  });
+
+  return flat;
+}
+
+// ---------- Render itinerary timeline ----------
+function priceSymbol(priceLevel) {
+  if (priceLevel === null || priceLevel === undefined) return "—";
+  if (priceLevel === 0) return "Free";
+  return "$".repeat(Math.max(1, Math.min(4, priceLevel)));
+}
+
+function ratingHtml(rating, totalRatings) {
+  const r = rating ?? "N/A";
+  const c = totalRatings ?? 0;
+  return `
+    <div class="activity-rating">
+      <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      ${r}${c ? ` (${c})` : ""}
+    </div>
+  `;
+}
+
+function activityTypeLabel(activityType) {
+  if (activityType === "restaurant") return "Restaurant";
+  if (activityType === "cafe") return "Café";
+  if (activityType === "tourist_attraction") return "Attraction";
+  return activityType || "Place";
+}
+
 function renderItinerary() {
   const section = document.getElementById("itinerarySection");
   section.innerHTML = "";
 
-  dayPreferences.forEach((pref, index) => {
-    const vibe = pref.vibe || "adventure";
-    const activities = MOCK_ACTIVITIES[vibe] || MOCK_ACTIVITIES.adventure;
-    const dayType = vibe.charAt(0).toUpperCase() + vibe.slice(1);
+  if (!itineraryData || itineraryData.length === 0) {
+    renderItineraryError("No places returned for this destination.");
+    return;
+  }
+
+  itineraryData.forEach((day, dayIndex) => {
+    const pref = dayPreferences[dayIndex];
+    const vibe = pref?.vibe || tripData.travelStyle || "adventure";
+    const dayBadge = vibe.charAt(0).toUpperCase() + vibe.slice(1);
 
     const card = document.createElement("div");
     card.className = "day-plan-card reveal";
-    card.style.animationDelay = `${index * 0.15}s`;
+    card.style.animationDelay = `${dayIndex * 0.15}s`;
 
-    card.innerHTML = `
-      <div class="day-plan-header">
-        <div class="day-circle">${pref.day}</div>
-        <div>
-          <div class="day-plan-title">DAY ${pref.day}</div>
-          <span class="day-badge">${dayType}</span>
-        </div>
-      </div>
-      <div class="timeline">
-        ${activities
-          .map(
-            (act, i) => `
-          <div class="timeline-item">
+    const itemsHtml = day.activities
+      .map((activity) => {
+        const place = activity.place;
+
+        if (!place) {
+          return `
+            <div class="timeline-item">
+              <div class="timeline-dot"></div>
+              <div class="timeline-item-inner">
+                <div class="activity-meta">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  <span class="activity-time">${activity.time}</span>
+                  <span class="activity-type">${activityTypeLabel(activity.activityType)}</span>
+                </div>
+                <div class="activity-name">No suitable place found</div>
+              </div>
+            </div>
+          `;
+        }
+
+        const flat = flatPlaces.find(
+          (f) =>
+            f.dayIndex === dayIndex &&
+            f.place.id === place.id &&
+            f.time === activity.time,
+        );
+        const globalIndex = flat ? flat.globalIndex : -1;
+
+        const score =
+          place.rankingScore !== null && place.rankingScore !== undefined
+            ? `<span class="activity-price" title="Ranking score">Score ${place.rankingScore}</span>`
+            : "";
+
+        const reasons =
+          Array.isArray(place.rankingReasons) && place.rankingReasons.length
+            ? `<div class="activity-distance" style="margin-top:6px;font-size:0.85rem;color:#64748B;">${place.rankingReasons.slice(0, 2).join(" · ")}</div>`
+            : "";
+
+        const distance =
+          place.distanceKm !== null && place.distanceKm !== undefined
+            ? `<div class="activity-distance" style="margin-top:6px;font-size:0.9rem;color:#0ABFBC;font-weight:600;">~${place.distanceKm} km from anchor</div>`
+            : "";
+
+        return `
+          <div class="timeline-item" data-global-index="${globalIndex}" style="cursor:pointer">
             <div class="timeline-dot"></div>
             <div class="timeline-item-inner">
               <div class="activity-meta">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                <span class="activity-time">${act.time}</span>
-                <span class="activity-type">${act.type}</span>
+                <span class="activity-time">${activity.time}</span>
+                <span class="activity-type">${activityTypeLabel(activity.activityType)}</span>
               </div>
-              <div class="activity-name">${act.name}</div>
+              <div class="activity-name">${place.name}</div>
               <div class="activity-stats">
-                <div class="activity-rating">
-                  <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                  ${act.rating}
-                </div>
-                <span class="activity-price">${act.price}</span>
+                ${ratingHtml(place.rating, place.totalRatings)}
+                <span class="activity-price">${priceSymbol(place.priceLevel)}</span>
+                ${score}
               </div>
+              ${distance}
+              ${reasons}
             </div>
           </div>
-        `,
-          )
-          .join("")}
+        `;
+      })
+      .join("");
+
+    card.innerHTML = `
+      <div class="day-plan-header">
+        <div class="day-circle">${day.day}</div>
+        <div>
+          <div class="day-plan-title">DAY ${day.day} — ${day.dayTitle || tripData.city}</div>
+          <span class="day-badge">${dayBadge}</span>
+        </div>
+      </div>
+      <div class="timeline">
+        ${itemsHtml}
       </div>
     `;
 
     section.appendChild(card);
   });
 
+  // Wire up timeline → map clicks
+  section.querySelectorAll(".timeline-item[data-global-index]").forEach((el) => {
+    el.addEventListener("click", () => {
+      const idx = parseInt(el.getAttribute("data-global-index"), 10);
+      if (!Number.isNaN(idx) && idx >= 0) {
+        focusPlaceOnMap(idx);
+        highlightTimelineItem(idx);
+      }
+    });
+  });
+
   setTimeout(setupReveal, 100);
 }
 
+function highlightTimelineItem(globalIndex) {
+  document
+    .querySelectorAll(".timeline-item-inner")
+    .forEach((el) => (el.style.borderColor = ""));
+
+  const item = document.querySelector(
+    `.timeline-item[data-global-index="${globalIndex}"] .timeline-item-inner`,
+  );
+  if (item) item.style.borderColor = "#0ABFBC";
+}
+
+// ---------- Google Maps ----------
+async function initMap() {
+  const jordanCenter = { lat: 31.95, lng: 35.93 }; // Amman fallback
+
+  map = new google.maps.Map(document.getElementById("map"), {
+    center: jordanCenter,
+    zoom: 7,
+  });
+
+  infoWindow = new google.maps.InfoWindow();
+
+  // If itinerary already arrived before the map was ready, render now.
+  if (itineraryData) {
+    renderMapFromItinerary();
+  }
+}
+
+function clearMap() {
+  markers.forEach((marker) => marker.setMap(null));
+  markers = [];
+
+  routeLines.forEach((line) => line.setMap(null));
+  routeLines = [];
+}
+
+const DAY_COLORS = [
+  "#0ABFBC",
+  "#F59E0B",
+  "#EF4444",
+  "#8B5CF6",
+  "#10B981",
+  "#3B82F6",
+  "#EC4899",
+];
+
+function renderMapFromItinerary() {
+  if (!map || !itineraryData) return;
+
+  clearMap();
+
+  if (flatPlaces.length === 0) return;
+
+  const bounds = new google.maps.LatLngBounds();
+
+  flatPlaces.forEach((entry, globalIndex) => {
+    const { place, dayIndex, day, time, activityType } = entry;
+    const position = { lat: place.location.lat, lng: place.location.lng };
+
+    const marker = new google.maps.Marker({
+      position,
+      map,
+      title: `Day ${day} — ${place.name}`,
+      label: {
+        text: String(globalIndex + 1),
+        color: "#fff",
+        fontWeight: "bold",
+      },
+      icon: {
+        path: google.maps.SymbolPath.CIRCLE,
+        scale: 12,
+        fillColor: DAY_COLORS[dayIndex % DAY_COLORS.length],
+        fillOpacity: 1,
+        strokeColor: "#fff",
+        strokeWeight: 2,
+      },
+    });
+
+    marker.addListener("click", () => {
+      openInfoWindowFor(globalIndex);
+      highlightTimelineItem(globalIndex);
+    });
+
+    markers.push(marker);
+    bounds.extend(position);
+  });
+
+  // Per-day route polylines
+  const placesByDay = new Map();
+  flatPlaces.forEach((entry) => {
+    if (!placesByDay.has(entry.dayIndex)) placesByDay.set(entry.dayIndex, []);
+    placesByDay.get(entry.dayIndex).push(entry);
+  });
+
+  placesByDay.forEach((entries, dayIndex) => {
+    if (entries.length < 2) return;
+    const path = entries.map((e) => ({
+      lat: e.place.location.lat,
+      lng: e.place.location.lng,
+    }));
+    const line = new google.maps.Polyline({
+      path,
+      geodesic: true,
+      strokeColor: DAY_COLORS[dayIndex % DAY_COLORS.length],
+      strokeOpacity: 0.85,
+      strokeWeight: 3,
+      map,
+    });
+    routeLines.push(line);
+  });
+
+  if (!bounds.isEmpty()) map.fitBounds(bounds);
+}
+
+function openInfoWindowFor(globalIndex) {
+  const entry = flatPlaces[globalIndex];
+  const marker = markers[globalIndex];
+  if (!entry || !marker) return;
+
+  const { place, day, time, activityType } = entry;
+
+  const reasons =
+    Array.isArray(place.rankingReasons) && place.rankingReasons.length
+      ? `<ul style="margin:6px 0 0 18px;padding:0;font-size:0.85rem;color:#475569;">
+          ${place.rankingReasons
+            .slice(0, 3)
+            .map((r) => `<li>${r}</li>`)
+            .join("")}
+        </ul>`
+      : "";
+
+  infoWindow.setContent(`
+    <div style="max-width:260px;font-family:'DM Sans',sans-serif">
+      <div style="font-size:0.75rem;color:#0ABFBC;font-weight:700;letter-spacing:0.05em">
+        DAY ${day} · ${time} · ${activityTypeLabel(activityType).toUpperCase()}
+      </div>
+      <h4 style="margin:4px 0 6px 0;">${place.name}</h4>
+      <p style="margin:0 0 6px 0;font-size:0.85rem;color:#475569;">${place.address || ""}</p>
+      <p style="margin:0 0 4px 0;font-size:0.9rem;">
+        ⭐ ${place.rating ?? "N/A"} (${place.totalRatings ?? 0}) · ${priceSymbol(place.priceLevel)}
+        ${place.rankingScore != null ? ` · Score ${place.rankingScore}` : ""}
+      </p>
+      ${
+        place.distanceKm != null
+          ? `<p style="margin:0;color:#0ABFBC;font-weight:600;">~${place.distanceKm} km from anchor</p>`
+          : ""
+      }
+      ${reasons}
+    </div>
+  `);
+  infoWindow.open(map, marker);
+}
+
+function focusPlaceOnMap(globalIndex) {
+  const marker = markers[globalIndex];
+  const entry = flatPlaces[globalIndex];
+  if (!marker || !entry) return;
+
+  map.panTo(marker.getPosition());
+  if (map.getZoom() < 13) map.setZoom(14);
+  openInfoWindowFor(globalIndex);
+}
+
+// ---------- WhatsApp / Save / Sign out ----------
 function sendToWhatsApp() {
   let message = `🌍 *AI Trip Plan for ${tripData.city}*\n`;
   message += `📅 ${tripData.days} days | 👥 ${tripData.people} people | 💰 $${tripData.budget}\n\n`;
 
-  dayPreferences.forEach((pref) => {
-    const vibe = pref.vibe || "adventure";
-    const activities = MOCK_ACTIVITIES[vibe] || MOCK_ACTIVITIES.adventure;
-    message += `*Day ${pref.day}:*\n`;
-    activities.forEach((act) => {
-      message += `  ${act.time} - ${act.type}: ${act.name} ⭐${act.rating}\n`;
+  if (Array.isArray(itineraryData)) {
+    itineraryData.forEach((day) => {
+      message += `*Day ${day.day}:*\n`;
+      day.activities.forEach((act) => {
+        if (!act.place) return;
+        const r = act.place.rating != null ? ` ⭐${act.place.rating}` : "";
+        message += `  ${act.time} - ${activityTypeLabel(act.activityType)}: ${act.place.name}${r}\n`;
+      });
+      message += "\n";
     });
-    message += "\n";
-  });
+  } else {
+    message += "_Itinerary not yet generated._";
+  }
 
   const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
   window.open(url, "_blank");
@@ -296,6 +607,7 @@ function saveTrip() {
     id: Date.now(),
     tripData,
     dayPreferences,
+    itinerary: itineraryData,
     savedAt: new Date().toISOString(),
   };
   saved.push(tripEntry);
@@ -308,7 +620,7 @@ function handleSignOut() {
   location.href = "index.html";
 }
 
-// Scroll reveal
+// ---------- Scroll reveal ----------
 function setupReveal() {
   const els = document.querySelectorAll(".reveal:not(.visible)");
   const observer = new IntersectionObserver(
@@ -325,186 +637,9 @@ function setupReveal() {
   els.forEach((el) => observer.observe(el));
 }
 
-// Google Maps Integration
-let map;
-let markers = [];
-let infoWindow;
-let routeLine = null;
-
-async function initMap() {
-  const jordanCenter = { lat: 31.24, lng: 36.51 };
-
-  map = new google.maps.Map(document.getElementById("map"), {
-    center: jordanCenter,
-    zoom: 7,
-  });
-
-  infoWindow = new google.maps.InfoWindow();
-
-  await loadPlacesOnMap();
-}
-
-async function loadPlacesOnMap() {
-  try {
-    const destination = tripData?.city || "Jordan";
-    const type = mapTravelStyleToPlaceType(tripData?.travelStyle);
-
-    const response = await fetch(
-      `http://localhost:3000/api/places?destination=${encodeURIComponent(destination)}&type=${encodeURIComponent(type)}`,
-    );
-
-    const data = await response.json();
-    console.log("Places response:", data);
-
-    if (!data.success || !Array.isArray(data.places)) {
-      console.error("Failed to load places:", data);
-      return;
-    }
-
-    clearMap();
-
-    const bounds = new google.maps.LatLngBounds();
-
-    const validPlaces = data.places.filter(
-      (place) => place.location?.lat && place.location?.lng,
-    );
-
-    validPlaces.forEach((place, index) => {
-      const position = {
-        lat: place.location.lat,
-        lng: place.location.lng,
-      };
-
-      const marker = new google.maps.Marker({
-        position,
-        map,
-        title: place.name,
-        label: `${index + 1}`,
-      });
-
-      marker.addListener("click", () => {
-        const distanceText =
-          index > 0
-            ? calculateDistanceKm(
-                validPlaces[index - 1].location.lat,
-                validPlaces[index - 1].location.lng,
-                place.location.lat,
-                place.location.lng,
-              ).toFixed(2) + " km from previous stop"
-            : "Starting point";
-
-        infoWindow.setContent(`
-          <div style="max-width:240px">
-            <h4 style="margin:0 0 8px 0;">${place.name}</h4>
-            <p style="margin:0 0 6px 0;">${place.address || "No address available"}</p>
-            <p style="margin:0 0 6px 0;">⭐ ${place.rating ?? "N/A"} (${place.totalRatings ?? 0})</p>
-            <p style="margin:0; color:#0ABFBC; font-weight:600;">${distanceText}</p>
-          </div>
-        `);
-        infoWindow.open(map, marker);
-      });
-
-      markers.push(marker);
-      bounds.extend(position);
-    });
-
-    if (validPlaces.length > 1) {
-      drawRouteLine(validPlaces);
-      renderDistancesInTimeline(validPlaces);
-    }
-
-    if (validPlaces.length > 0) {
-      map.fitBounds(bounds);
-    }
-  } catch (error) {
-    console.error("Error loading places on map:", error);
-  }
-}
-
-function clearMap() {
-  markers.forEach((marker) => marker.setMap(null));
-  markers = [];
-
-  if (routeLine) {
-    routeLine.setMap(null);
-    routeLine = null;
-  }
-}
-
-function drawRouteLine(places) {
-  const path = places.map((place) => ({
-    lat: place.location.lat,
-    lng: place.location.lng,
-  }));
-
-  routeLine = new google.maps.Polyline({
-    path,
-    geodesic: true,
-    strokeColor: "#0ABFBC",
-    strokeOpacity: 0.9,
-    strokeWeight: 3,
-    map,
-  });
-}
-
-function renderDistancesInTimeline(places) {
-  const timelineItems = document.querySelectorAll(".timeline-item");
-
-  timelineItems.forEach((item, index) => {
-    const oldDistance = item.querySelector(".activity-distance");
-    if (oldDistance) oldDistance.remove();
-
-    if (index === 0 || !places[index] || !places[index - 1]) return;
-
-    const distanceKm = calculateDistanceKm(
-      places[index - 1].location.lat,
-      places[index - 1].location.lng,
-      places[index].location.lat,
-      places[index].location.lng,
-    );
-
-    const distanceEl = document.createElement("div");
-    distanceEl.className = "activity-distance";
-    distanceEl.style.marginTop = "8px";
-    distanceEl.style.fontSize = "0.9rem";
-    distanceEl.style.color = "#0ABFBC";
-    distanceEl.style.fontWeight = "600";
-    distanceEl.textContent = `Distance from previous stop: ${distanceKm.toFixed(2)} km`;
-
-    const inner = item.querySelector(".timeline-item-inner");
-    if (inner) inner.appendChild(distanceEl);
-  });
-}
-
-function calculateDistanceKm(lat1, lng1, lat2, lng2) {
-  const toRad = (value) => (value * Math.PI) / 180;
-  const earthRadiusKm = 6371;
-
-  const dLat = toRad(lat2 - lat1);
-  const dLng = toRad(lng2 - lng1);
-
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(toRad(lat1)) *
-      Math.cos(toRad(lat2)) *
-      Math.sin(dLng / 2) *
-      Math.sin(dLng / 2);
-
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return earthRadiusKm * c;
-}
-
-function mapTravelStyleToPlaceType(style) {
-  switch ((style || "").toLowerCase()) {
-    case "food":
-      return "restaurant";
-    case "relaxing":
-      return "tourist_attraction";
-    case "adventure":
-    default:
-      return "tourist_attraction";
-  }
-}
-
+// ---------- Globals ----------
 window.initMap = initMap;
+window.sendToWhatsApp = sendToWhatsApp;
+window.saveTrip = saveTrip;
+window.handleSignOut = handleSignOut;
 document.addEventListener("DOMContentLoaded", init);
