@@ -2,6 +2,38 @@
 // AI Trip Planner - Login Page
 // =========================================
 
+// Dark mode initialization
+(function initDarkMode() {
+  const saved = localStorage.getItem('darkMode');
+  if (saved === 'enabled') {
+    document.body.classList.add('dark');
+    const moonIcon = document.getElementById('moonIcon');
+    const sunIcon = document.getElementById('sunIcon');
+    if (moonIcon) moonIcon.style.display = 'none';
+    if (sunIcon) sunIcon.style.display = 'block';
+  }
+})();
+
+// Dark mode toggle
+const darkToggle = document.getElementById('darkToggle');
+if (darkToggle) {
+  darkToggle.addEventListener('click', function () {
+    const isDark = document.body.classList.toggle('dark');
+    const moonIcon = document.getElementById('moonIcon');
+    const sunIcon = document.getElementById('sunIcon');
+    
+    if (isDark) {
+      localStorage.setItem('darkMode', 'enabled');
+      moonIcon.style.display = 'none';
+      sunIcon.style.display = 'block';
+    } else {
+      localStorage.setItem('darkMode', 'disabled');
+      moonIcon.style.display = 'block';
+      sunIcon.style.display = 'none';
+    }
+  });
+}
+
 let isSignUp = false;
 
 function switchTab(tab) {

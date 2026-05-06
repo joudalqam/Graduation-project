@@ -2,21 +2,27 @@
 // AI Trip Planner - Customize Days Page
 // =========================================
 
-// Dark mode sync
-(function initDarkMode() {
-  const saved = localStorage.getItem('darkMode');
-  if (saved === 'true') {
-    document.body.classList.add('dark');
+// Auto-apply dark mode from localStorage when page loads
+if (localStorage.getItem('darkMode') === 'enabled') {
+  document.body.classList.add('dark');
+  const moonIcon = document.getElementById('moonIcon');
+  const sunIcon = document.getElementById('sunIcon');
+  if (moonIcon) moonIcon.style.display = 'none';
+  if (sunIcon) sunIcon.style.display = 'block';
+}
+
+// Dark mode toggle
+document.getElementById('darkToggle').addEventListener('click', function () {
+  document.body.classList.toggle('dark');
+  if (document.body.classList.contains('dark')) {
+    localStorage.setItem('darkMode', 'enabled');
     document.getElementById('moonIcon').style.display = 'none';
     document.getElementById('sunIcon').style.display = 'block';
+  } else {
+    localStorage.setItem('darkMode', 'disabled');
+    document.getElementById('moonIcon').style.display = 'block';
+    document.getElementById('sunIcon').style.display = 'none';
   }
-})();
-
-document.getElementById('darkToggle').addEventListener('click', function () {
-  const isDark = document.body.classList.toggle('dark');
-  localStorage.setItem('darkMode', isDark);
-  document.getElementById('moonIcon').style.display = isDark ? 'none' : 'block';
-  document.getElementById('sunIcon').style.display = isDark ? 'block' : 'none';
 });
 
 const VIBE_OPTIONS = [
@@ -24,21 +30,21 @@ const VIBE_OPTIONS = [
     value: 'adventure',
     label: 'Adventure',
     emoji: '🏔️',
-    image: 'photo-1673505413397-0cd0dc4f5854.jpg',
+    image: 'mountain-hiking.webp',
     description: 'Outdoor activities and exploration',
   },
   {
     value: 'food',
     label: 'Food',
     emoji: '🍜',
-    image: 'photo-1660207766758-a2e5985005ad.jpg',
+    image: 'food.jpg',
     description: 'Culinary experiences and dining',
   },
   {
     value: 'relaxing',
     label: 'Relaxing',
     emoji: '🏖️',
-    image: 'photo-1588001400947-6385aef4ab0e.jpg',
+    image: 'daedsea.jpg',
     description: 'Peaceful and leisurely activities',
   },
 ];
@@ -103,7 +109,7 @@ function createDayCard(dayNum) {
         <p>Select the type of experience you want for this day of your journey</p>
         <div class="day-photo-wrap">
           <div class="teal-rect"></div>
-          <img src="photo-1660207766758-a2e5985005ad.jpg" alt="Day ${dayNum}" id="dayPhoto-${dayNum}" />
+          <img src="mountain-hiking.webp" alt="Day ${dayNum}" id="dayPhoto-${dayNum}" />
         </div>
       </div>
       <div class="vibe-options">

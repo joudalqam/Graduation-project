@@ -6,14 +6,16 @@ import qrcode from 'qrcode-terminal'
 process.on('unhandledRejection', err => console.error('❌ Unhandled:', err))
 process.on('uncaughtException', err => console.error('❌ Exception:', err))
 
+const shouldStartBot = String(process.env.WHATSAPP_BOT_ENABLED || "false").toLowerCase() === "true"
+
 const client = new Client({
-  authStrategy: new LocalAuth({
-    clientId: "trip-bot"
-  }),
-  puppeteer: {
-    headless: false, // 👈 IMPORTANT for debugging
-    args: ['--no-sandbox']
-  }
+    authStrategy: new LocalAuth({
+        clientId: "trip-bot"
+    }),
+    puppeteer: {
+        headless: true,
+        args: ['--no-sandbox']
+    }
 })
 
 let isReady = false
@@ -48,9 +50,9 @@ client.on('message', async (msg) => {
     // 1. Handling YES
     if (text === 'yes' || text === 'y' || text === 'نعم') {
         const currentPlace = conv.places[conv.currentIndex].name;
-        
+
         await msg.reply(`The reservation for *${currentPlace}* is confirmed! ✅`);
-        
+
         // Move to next place or finish
         conv.currentIndex++;
         if (conv.currentIndex < conv.places.length) {
@@ -67,7 +69,7 @@ client.on('message', async (msg) => {
     // 2. Handling NO
     else if (text === 'no' || text === 'n' || text === 'لا') {
         await msg.reply("No problem! Is there any other place in your mind you want me to help you reserve in? 💭");
-        
+
         // Change state to wait for their custom suggestion
         conv.state = 'waiting_custom_suggestion';
     }
@@ -101,7 +103,7 @@ async function startReservationBot(phone, destination, places) {
         const firstPlace = places[0];
 
         // The New "Direct" Message
-        const firstMessage = 
+        const firstMessage =
             `👋 Hi! I'm your Trip Concierge.\n\n` +
             `I see there is a reservation for *${firstPlace.name}* on your itinerary (Day ${firstPlace.day || 1}).\n\n` +
             `If you want to say *yes*, I will confirm the reservation for you right now! ✅`;
@@ -114,6 +116,10 @@ async function startReservationBot(phone, destination, places) {
     }
 }
 
-client.initialize()
+if (shouldStartBot) {
+    client.initialize().catch((err) => console.error('❌ Bot init failed:', err))
+} else {
+    console.log('ℹ️ WhatsApp bot is disabled. Set WHATSAPP_BOT_ENABLED=true to enable it.')
+}
 
 export { startReservationBot }

@@ -66,7 +66,7 @@
     <!-- Background Image + Dark Overlay
          Why: Creates visual depth and makes text readable over image
          The overlay (dark layer) ensures text contrast for accessibility -->
-    <img src="photo-1714412192114-61dca8f15f68.jpg" alt="Tropical beach destination" class="hero-bg" />
+    <img src="daedsea.jpg" alt="Tropical beach destination" class="hero-bg" />
     <div class="hero-overlay"></div>
 
     <!-- Social Media Sidebar
@@ -108,13 +108,13 @@
          Clickable images that user can interact with (carousel functionality) -->
     <div class="hero-thumbnails">
       <div class="hero-thumb">
-        <img src="photo-1673505413397-0cd0dc4f5854.jpg" alt="Everest Base Camp" />
+        <img src="daedsea.jpg" alt="Dead Sea" />
       </div>
       <div class="hero-thumb">
-        <img src="photo-1660207766758-a2e5985005ad.jpg" alt="Beach sunset" />
+        <img src="mountain-hiking.webp" alt="Mountain hiking" />
       </div>
       <div class="hero-thumb">
-        <img src="photo-1588001400947-6385aef4ab0e.jpg" alt="Tropical beach" />
+        <img src="petra.jpg" alt="Petra" />
       </div>
     </div>
 
@@ -237,12 +237,13 @@
             <!-- Destination Input
                  Why: First required field - where the user wants to go
                  Icon helps users understand field purpose -->
-            <div class="form-group">
+            <div class="form-group" style="position: relative;">
               <label>
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
                 Destination
               </label>
-              <input type="text" class="form-input" id="destination" placeholder="e.g. Paris, Tokyo, New York" required />
+              <input type="text" class="form-input" id="destination" placeholder="e.g. Amman, Petra, Aqaba, Dead Sea, Jerash" required />
+              <div id="destinationSuggestions" class="destination-suggestions" style="display:none; position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 6px 6px; max-height: 200px; overflow-y: auto; z-index: 100; box-shadow: 0 4px 6px rgba(0,0,0,0.1);"></div>
             </div>
 
             <!-- Days Input
@@ -276,36 +277,6 @@
                 Total Budget (USD)
               </label>
               <input type="number" class="form-input" id="budget" placeholder="e.g. 2000" min="100" required />
-            </div>
-          </div>
-
-          <!-- Travel Style Selection - REMOVED PER USER REQUEST
-               Originally had 3 options: Adventure, Food, Relaxing
-               Removed to simplify form and reduce friction in signup process -->
-          <div style="margin-bottom: 28px;">
-            <div class="travel-style-label">Travel Style</div>
-            <div class="travel-style-grid">
-              <div class="style-option">
-                <input type="radio" name="travelStyle" id="adventure" value="adventure" checked />
-                <label for="adventure">
-                  <span class="style-emoji">🏔️</span>
-                  Adventure
-                </label>
-              </div>
-              <div class="style-option">
-                <input type="radio" name="travelStyle" id="food" value="food" />
-                <label for="food">
-                  <span class="style-emoji">🍜</span>
-                  Food
-                </label>
-              </div>
-              <div class="style-option">
-                <input type="radio" name="travelStyle" id="relaxing" value="relaxing" />
-                <label for="relaxing">
-                  <span class="style-emoji">🏖️</span>
-                  Relaxing
-                </label>
-              </div>
             </div>
           </div>
 

@@ -2,14 +2,14 @@ import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
 import dotenv from "dotenv";
-import { createRequire } from "module";
 import { startReservationBot } from "./whatsapp-bot.js";
 import placesRoutes from "./routes/placesRoutes.js";
 import itineraryRoutes from "./routes/itineraryRoutes.js";
+import tripRoutes from "./routes/tripRoutes.js";
+import tripsRoutes from "./routes/trips.js";
 import { notFound, errorHandler } from "./middlewares/errorMiddleware.js";
 
 dotenv.config();
-const require = createRequire(import.meta.url);
 
 const app = express();
 
@@ -17,11 +17,10 @@ app.use(cors());
 app.use(express.json());
 
 // ROUTES
-app.use("/api/auth", require("./routes/auth"));
-app.use("/api/trips", require("./routes/trips"));
-app.use("/api/ai", require("./routes/ai"));
 app.use("/api/places", placesRoutes);
 app.use("/api/itinerary", itineraryRoutes);
+app.use("/api", tripRoutes);
+app.use("/api/trips", tripsRoutes);
 
 app.get("/", (req, res) => {
   res.json({ message: "API running" });
@@ -79,10 +78,22 @@ app.use(notFound);
 app.use(errorHandler);
 
 // DB
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => {
-    console.log("✅ MongoDB connected");
-    app.listen(5000, "0.0.0.0", () => console.log("🚀 Server running on 5000"));
-  })
-  .catch((err) => console.error(err));
+const startServer = () => {
+  app.listen(5000, "0.0.0.0", () => console.log("🚀 Server running on 5000"));
+};
+
+if (process.env.MONGO_URI) {
+  mongoose
+    .connect(process.env.MONGO_URI)
+    .then(() => {
+      console.log("✅ MongoDB connected");
+      startServer();
+    })
+    .catch((err) => {
+      console.error("❌ MongoDB connection failed:", err.message);
+      startServer();
+    });
+} else {
+  console.warn("⚠️ MONGO_URI is not set. Starting server without MongoDB connection.");
+  startServer();
+}

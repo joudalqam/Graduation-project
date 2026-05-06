@@ -197,6 +197,14 @@ body.dark .btn-ghost { color: #d1d5db; }
 }
 .dark-toggle:hover { opacity: 0.7; } /* Slightly transparent on hover */
 
+/* Floating Dark Mode Toggle Button */
+.floating-dark-toggle {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+}
+
 /*
 ┌─────────────────────────────────┐
 │ Background Image + Dark Overlay │
@@ -229,6 +237,7 @@ body.dark .btn-ghost { color: #d1d5db; }
   object-fit: cover;            /* Scale image to fill without distortion */
   width: 100%;
   height: 100%;
+  transition: opacity 0.4s ease;
 }
 
 /* Dark overlay over the background image for readability */
@@ -577,6 +586,43 @@ body.dark .form-input {
 }
 .form-input::placeholder { color: #9ca3af; } /* Light gray placeholder */
 
+/* Destination Suggestions Dropdown */
+.destination-suggestions {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 0 0 10px 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+body.dark .destination-suggestions {
+  background: #1E293B;
+  border-color: #374151;
+}
+
+.destination-suggestion-item {
+  color: #1C2B4A;
+  padding: 12px 16px;
+  cursor: pointer;
+  border-bottom: 1px solid #f3f4f6;
+  transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  font-size: 0.95rem;
+}
+
+.destination-suggestion-item:hover {
+  background: #f5f7fa;
+}
+
+body.dark .destination-suggestion-item {
+  color: #e5e7eb;
+  border-bottom-color: #374151;
+}
+
+body.dark .destination-suggestion-item:hover {
+  background: #0F172A;
+}
+
 /* Travel Style Selector */
 .travel-style-label {
   font-family: 'DM Sans', sans-serif;
@@ -910,6 +956,46 @@ body.dark .footer { background: #0F172A; }  /* Very dark background in dark mode
 
 .btn-login:hover { background: var(--teal-dark); }
 .btn-login:active { transform: scale(0.98); }
+
+/* Login page dark mode styles */
+body.dark .login-left { background: #1a1a2e; }
+body.dark .login-card { 
+  background: #16213e; 
+  border-color: rgba(10, 191, 188, 0.2);
+}
+body.dark .login-card input { 
+  background: #0f3460; 
+  color: #fff; 
+  border-color: #1a4d7a;
+}
+body.dark .login-card input::placeholder { color: #7a8a99; }
+body.dark .login-card input:focus { border-color: var(--teal); }
+body.dark .login-heading .display { color: #ffffff; }
+body.dark .login-heading .script { color: #0ABFBC; }
+body.dark label { color: #cccccc; }
+body.dark .tab-btn { color: #9ca3af; }
+body.dark .tab-btn.active { 
+  background: #0f3460; 
+  color: var(--teal);
+}
+body.dark .tabs { background: #0f3460; }
+body.dark .divider { color: #6b7280; }
+body.dark .divider::before,
+body.dark .divider::after { background: #374151; }
+body.dark .btn-google { 
+  background: #0f3460;
+  border-color: #374151;
+  color: #e5e7eb;
+}
+body.dark .btn-google:hover { 
+  border-color: var(--teal);
+  color: var(--teal);
+}
+body.dark .input-with-icon input { 
+  background: #0f3460;
+  color: #fff;
+  border-color: #1a4d7a;
+}
 
 .divider {
   display: flex;

@@ -5,23 +5,32 @@
 // No mock / hardcoded activity data is used.
 // =========================================
 
-const API_BASE_URL = "http://localhost:3000";
+const API_BASE_URL = "http://localhost:5000";
 
 // ---------- Dark mode ----------
 (function initDarkMode() {
-  const saved = localStorage.getItem("darkMode");
-  if (saved === "true") {
+  if (localStorage.getItem("darkMode") === "enabled") {
     document.body.classList.add("dark");
-    document.getElementById("moonIcon").style.display = "none";
-    document.getElementById("sunIcon").style.display = "block";
+    const moonIcon = document.getElementById("moonIcon");
+    const sunIcon = document.getElementById("sunIcon");
+    if (moonIcon) moonIcon.style.display = "none";
+    if (sunIcon) sunIcon.style.display = "block";
   }
 })();
 
 document.getElementById("darkToggle").addEventListener("click", function () {
   const isDark = document.body.classList.toggle("dark");
-  localStorage.setItem("darkMode", isDark);
-  document.getElementById("moonIcon").style.display = isDark ? "none" : "block";
-  document.getElementById("sunIcon").style.display = isDark ? "block" : "none";
+  const moonIcon = document.getElementById("moonIcon");
+  const sunIcon = document.getElementById("sunIcon");
+  if (isDark) {
+    localStorage.setItem("darkMode", "enabled");
+    if (moonIcon) moonIcon.style.display = "none";
+    if (sunIcon) sunIcon.style.display = "block";
+  } else {
+    localStorage.setItem("darkMode", "disabled");
+    if (moonIcon) moonIcon.style.display = "block";
+    if (sunIcon) sunIcon.style.display = "none";
+  }
 });
 
 // ---------- State ----------
