@@ -5,20 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AI Trip Planner — Plan Your Perfect Trip</title>
   <link rel="stylesheet" href="css/styles.css" />
-  <!-- Lucide Icons - lightweight SVG icon library for UI elements -->
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
 </head>
 <body>
 
-  <!-- ========================================
-       NAVBAR / HEADER
-       Purpose: Fixed navigation bar that stays at top when scrolling
-       Contents: Logo, navigation links, theme switcher, Sign Up/Get Started buttons
-       Why: Provides consistent access to main navigation from any page position
-       ======================================== -->
   <nav class="navbar">
     <div class="navbar-inner">
-      <!-- Logo with custom SVG icon and branding text -->
       <a href="index.html" class="navbar-logo">
         <svg class="navbar-logo-icon" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
           <circle cx="18" cy="18" r="17" stroke="#0ABFBC" stroke-width="2"/>
@@ -29,49 +21,56 @@
         <span class="navbar-logo-text">Trip Planner</span>
       </a>
 
-      <!-- Navigation links for key sections (Home, Features, Contact) -->
       <ul class="navbar-links">
         <li><a href="#" class="active">Home</a></li>
         <li><a href="#features">Features</a></li>
         <li><a href="#contact">Contact Us</a></li>
       </ul>
 
-      <!-- Right side actions: Dark mode toggle, Sign Up button, Get Started CTA -->
       <div class="navbar-actions">
-        <!-- Dark Mode Toggle Button
-             Why: Allows users to switch between light and dark themes for better readability
-             Shows moon icon in light mode, sun icon in dark mode -->
         <button class="dark-toggle" id="darkToggle" aria-label="Toggle dark mode">
           <svg id="moonIcon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
           <svg id="sunIcon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
         </button>
-        <!-- Sign Up Button: Navigates to login page for user registration -->
-        <button class="btn-ghost" onclick="location.href='login.html'">Sign Up</button>
-        <!-- Get Started Button: Primary CTA that triggers main trip planning form -->
-        <button class="btn-primary" onclick="handleGetStarted()">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-          Get Started
-        </button>
+
+        <!-- User menu — shown when logged in -->
+        <div class="user-menu hidden" id="userMenu">
+          <button class="user-menu-btn" onclick="toggleDropdown()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+            <span id="navUserName">User</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </button>
+          <div class="dropdown-menu hidden" id="dropdownMenu">
+            <div class="dropdown-header">
+              <span id="dropdownUserName">John</span>
+              <span id="dropdownUserEmail">john@email.com</span>
+            </div>
+            <hr>
+            <a href="settings.html" onclick="">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+              Settings
+            </a>
+            <a href="#" onclick="handleMyTrips()">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+              My Trips
+            </a>
+            <a href="#" onclick="logout()">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 0-2-2V5a2 2 0 0 0 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+              Logout
+            </a>
+          </div>
+        </div>
+
+        <!-- Sign Up — shown when logged out -->
+        <button class="btn-ghost" id="signUpBtn" onclick="location.href='login.html'">Sign Up</button>
       </div>
     </div>
   </nav>
 
-  <!-- ========================================
-       HERO SECTION
-       Purpose: Eye-catching banner at top that converts visitors to users
-       Contents: Background image, headline, description, CTA button, image carousel, social links
-       Why: First impression - establishes brand identity and encourages immediate action
-       ======================================== -->
   <section class="hero">
-    <!-- Background Image + Dark Overlay
-         Why: Creates visual depth and makes text readable over image
-         The overlay (dark layer) ensures text contrast for accessibility -->
     <img src="daedsea.jpg" alt="Tropical beach destination" class="hero-bg" />
     <div class="hero-overlay"></div>
 
-    <!-- Social Media Sidebar
-         Why: Build credibility and drive traffic to social channels
-         Positioned on left for easy discovery -->
     <div class="social-sidebar">
       <a href="#" aria-label="Twitter">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"/></svg>
@@ -87,9 +86,6 @@
       </a>
     </div>
 
-    <!-- Main Hero Content
-         Why: Communicates value proposition and encourages signup
-         Large heading + descriptive paragraph + CTA button = classic conversion funnel -->
     <div class="hero-content">
       <h1 class="fade-in-up">
         <span class="script">Plan your</span>
@@ -98,14 +94,11 @@
       <p class="fade-in-up fade-in-up-delay-1">
         Discover the world's most beautiful destinations and create unforgettable memories with our AI-powered personalized travel itineraries.
       </p>
-      <button class="btn-outline fade-in-up fade-in-up-delay-2" onclick="document.getElementById('trip-form').scrollIntoView({behavior:'smooth'})">
+      <button class="btn-outline fade-in-up fade-in-up-delay-2" onclick="handlePlanYourTrip()">
         Plan Your Trip
       </button>
     </div>
 
-    <!-- Image Carousel Thumbnails
-         Why: Shows preview of beautiful destinations to inspire travelers
-         Clickable images that user can interact with (carousel functionality) -->
     <div class="hero-thumbnails">
       <div class="hero-thumb">
         <img src="daedsea.jpg" alt="Dead Sea" />
@@ -118,9 +111,6 @@
       </div>
     </div>
 
-    <!-- Carousel Navigation Dots
-         Why: Visual indicator of carousel position and allows users to jump to specific images
-         Active dot shows current slide, others are clickable to navigate -->
     <div class="hero-dots">
       <button class="hero-dot active" onclick="setSlide(0)"></button>
       <button class="hero-dot" onclick="setSlide(1)"></button>
@@ -128,12 +118,6 @@
     </div>
   </section>
 
-  <!-- ========================================
-       STATS BAR
-       Purpose: Build trust and credibility with social proof
-       Contents: 3 key metrics (50K+ travelers, 4.9/5 rating, 200+ destinations)
-       Why: Users trust numbers and statistics - this section demonstrates scale and quality
-       ======================================== -->
   <section class="stats-bar">
     <div class="stats-inner">
       <div class="reveal">
@@ -151,12 +135,6 @@
     </div>
   </section>
 
-  <!-- ========================================
-       FEATURES SECTION
-       Purpose: Highlight key differentiators and product benefits
-       Contents: 6 feature cards (AI generation, maps, WhatsApp, budget, places, flights)
-       Why: Educate users on what makes this product special vs competitors
-       ======================================== -->
   <section class="features-section" id="features">
     <div class="section-inner">
       <div class="section-heading reveal">
@@ -164,7 +142,6 @@
         <span class="display">AMAZING FEATURES</span>
         <p>Everything you need to plan the perfect trip, powered by artificial intelligence</p>
       </div>
-
       <div class="features-grid">
         <div class="feature-card reveal">
           <div class="feature-icon">
@@ -173,7 +150,6 @@
           <div class="feature-title">AI Itinerary Generation</div>
           <p class="feature-desc">Our advanced AI creates personalized day-by-day plans tailored to your preferences and budget.</p>
         </div>
-
         <div class="feature-card reveal">
           <div class="feature-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
@@ -181,7 +157,6 @@
           <div class="feature-title">Interactive Maps</div>
           <p class="feature-desc">Visualize your entire trip with interactive maps showing all locations and routes between them.</p>
         </div>
-
         <div class="feature-card reveal">
           <div class="feature-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
@@ -189,7 +164,6 @@
           <div class="feature-title">WhatsApp Delivery</div>
           <p class="feature-desc">Receive your complete itinerary directly on WhatsApp for easy access on the go.</p>
         </div>
-
         <div class="feature-card reveal">
           <div class="feature-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
@@ -197,7 +171,6 @@
           <div class="feature-title">Budget Planner</div>
           <p class="feature-desc">Smart budget allocation across accommodation, food, activities, and transportation.</p>
         </div>
-
         <div class="feature-card reveal">
           <div class="feature-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
@@ -205,7 +178,6 @@
           <div class="feature-title">Top-Rated Places</div>
           <p class="feature-desc">Discover highly-rated restaurants, attractions, and hidden gems curated just for you.</p>
         </div>
-
         <div class="feature-card reveal">
           <div class="feature-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
@@ -217,26 +189,15 @@
     </div>
   </section>
 
-  <!-- ========================================
-       TRIP FORM SECTION
-       Purpose: Main conversion point - collect user info and generate trip plan
-       Contents: Form with destination, days, people, budget inputs
-       Why: Core functionality - turns interested visitors into active users
-       Note: Travel style section removed per user request - simplified form
-       ======================================== -->
   <section class="form-section" id="trip-form">
     <div class="section-inner">
       <div class="section-heading reveal">
         <span class="display">START PLANNING YOUR ADVENTURE</span>
         <p>Tell us about your dream trip and let our AI create the perfect itinerary</p>
       </div>
-
       <div class="trip-form-card reveal">
         <form id="tripForm" onsubmit="handleTripFormSubmit(event)">
           <div class="form-grid">
-            <!-- Destination Input
-                 Why: First required field - where the user wants to go
-                 Icon helps users understand field purpose -->
             <div class="form-group" style="position: relative;">
               <label>
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
@@ -245,10 +206,6 @@
               <input type="text" class="form-input" id="destination" placeholder="e.g. Amman, Petra, Aqaba, Dead Sea, Jerash" required />
               <div id="destinationSuggestions" class="destination-suggestions" style="display:none; position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 6px 6px; max-height: 200px; overflow-y: auto; z-index: 100; box-shadow: 0 4px 6px rgba(0,0,0,0.1);"></div>
             </div>
-
-            <!-- Days Input
-                 Why: Define trip duration - critical for itinerary planning
-                 Constraints: 1-30 days limits unrealistic entries -->
             <div class="form-group">
               <label>
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
@@ -256,10 +213,6 @@
               </label>
               <input type="number" class="form-input" id="days" placeholder="e.g. 7" min="1" max="30" required />
             </div>
-
-            <!-- People Input
-                 Why: Determines group size - affects accommodation and activity recommendations
-                 Minimum 1 person required -->
             <div class="form-group">
               <label>
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
@@ -267,10 +220,6 @@
               </label>
               <input type="number" class="form-input" id="people" placeholder="e.g. 2" min="1" required />
             </div>
-
-            <!-- Budget Input
-                 Why: Controls expense recommendations and filters options
-                 Minimum $100 ensures realistic budget entries -->
             <div class="form-group">
               <label>
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
@@ -279,7 +228,6 @@
               <input type="number" class="form-input" id="budget" placeholder="e.g. 2000" min="100" required />
             </div>
           </div>
-
           <button type="submit" class="btn-generate">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/><path d="M19 3v4"/><path d="M21 5h-4"/></svg>
             Generate My Trip Plan
@@ -289,12 +237,6 @@
     </div>
   </section>
 
-  <!-- ========================================
-       CONTACT SECTION
-       Purpose: Provide customer support channel and build relationships
-       Contents: Contact form with name, email, message fields
-       Why: Allows users to reach out with questions/feedback
-       ======================================== -->
   <section class="features-section" id="contact" style="background: var(--bg-light);">
     <div class="section-inner">
       <div class="section-heading reveal">
@@ -327,17 +269,8 @@
     </div>
   </section>
 
-  <!-- ========================================
-       FOOTER
-       Purpose: Navigation, legal info, and brand presence at bottom
-       Contents: Brand section, Quick Links, Support links, copyright
-       Why: Users often scroll to footer looking for specific info (privacy, contact, etc.)
-       ======================================== -->
   <footer class="footer">
     <div class="footer-grid">
-      <!-- Brand/About Section
-           Why: Restate brand promise and value proposition
-           Build trust with mission statement -->
       <div class="footer-brand">
         <a href="index.html" class="navbar-logo" style="display:inline-flex; margin-bottom: 0;">
           <svg style="width:32px;height:32px;" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -349,23 +282,12 @@
         </a>
         <p>AI-powered personalized travel itineraries delivered straight to your WhatsApp.</p>
         <div class="footer-social">
-          <a href="#">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
-          </a>
-          <a href="#">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"/></svg>
-          </a>
-          <a href="#">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
-          </a>
-          <a href="#">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46a2.78 2.78 0 0 0-1.95 1.96A29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58A2.78 2.78 0 0 0 3.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.95A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z"/><polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02"/></svg>
-          </a>
+          <a href="#"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg></a>
+          <a href="#"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"/></svg></a>
+          <a href="#"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg></a>
+          <a href="#"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46a2.78 2.78 0 0 0-1.95 1.96A29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58A2.78 2.78 0 0 0 3.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.95A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z"/><polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02"/></svg></a>
         </div>
       </div>
-
-      <!-- Quick Navigation Links
-           Why: Help users quickly access main sections without scrolling -->
       <div class="footer-col">
         <h4>Quick Links</h4>
         <ul>
@@ -375,10 +297,6 @@
           <li><a href="#contact">Contact</a></li>
         </ul>
       </div>
-
-      <!-- Support/Legal Links
-           Why: Important for legal compliance and customer support
-           Includes privacy policy, terms, FAQs -->
       <div class="footer-col">
         <h4>Support</h4>
         <ul>
@@ -394,6 +312,7 @@
     </div>
   </footer>
 
+  <script src="js/utils.js"></script>
   <script src="js/main.js"></script>
 </body>
 </html>
