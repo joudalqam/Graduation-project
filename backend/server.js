@@ -1,24 +1,25 @@
+// IMPORTANT: ./config/env.js MUST be the very first import so dotenv.config()
+// runs before any other module's top-level code reads process.env. ES module
+// imports are hoisted and executed in source order, so anything imported
+// after this line will see a fully-populated process.env.
+import "./config/env.js";
+import { env, getPort, printStartupBanner } from "./config/env.js";
+
 import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
-import dotenv from "dotenv";
 import { startReservationBot } from "./whatsapp-bot.js";
 import placesRoutes from "./routes/placesRoutes.js";
 import itineraryRoutes from "./routes/itineraryRoutes.js";
 import tripRoutes from "./routes/tripRoutes.js";
 import tripsRoutes from "./routes/trips.js";
 import authRoutes from "./routes/auth.js";
+import aiRoutes from "./routes/aiRoutes.js";
 import { notFound, errorHandler } from "./middlewares/errorMiddleware.js";
 
-dotenv.config();
+printStartupBanner();
 
-if (!process.env.JWT_SECRET) {
-  console.warn(
-    "⚠️ JWT_SECRET is not set. Authentication will fail until it is configured in backend/.env"
-  );
-}
-
-const PORT = Number(process.env.PORT) || 5000;
+const PORT = getPort();
 
 const app = express();
 
@@ -45,6 +46,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/places", placesRoutes);
 app.use("/api/itinerary", itineraryRoutes);
 app.use("/api/trips", tripsRoutes);
+app.use("/api/ai", aiRoutes);
 app.use("/api", tripRoutes);
 
 app.get("/", (req, res) => {
@@ -57,6 +59,11 @@ app.get("/api/health", (_req, res) => {
     status: "ok",
     uptime: process.uptime(),
     database: dbStates[mongoose.connection.readyState] || "unknown",
+    services: {
+      gemini: env.hasGemini ? "configured" : "missing",
+      googleMaps: env.hasGoogleMaps ? "configured" : "missing",
+      auth: env.hasJwt ? "configured" : "missing",
+    },
     timestamp: new Date().toISOString(),
   });
 });
@@ -120,15 +127,26 @@ mongoose.connection.on("disconnected", () =>
 mongoose.connection.on("reconnected", () => console.log("✅ MongoDB reconnected"));
 
 const startServer = () => {
-  app.listen(PORT, "0.0.0.0", () =>
-    console.log(`🚀 Server running on http://localhost:${PORT}`)
-  );
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`🚀 Server running on port ${PORT} (http://localhost:${PORT})`);
+    if (env.hasGemini) console.log("✅ Gemini API configured");
+    if (!env.hasGemini) {
+      console.warn(
+        "⚠️  Gemini API key missing — /api/ai/generate-plan will return 503 until GEMINI_API_KEY is set."
+      );
+    }
+    if (!env.hasJwt) {
+      console.warn(
+        "⚠️  JWT_SECRET missing — auth endpoints will fail until JWT_SECRET is set."
+      );
+    }
+  });
 };
 
 const connectDb = async () => {
-  if (!process.env.MONGO_URI) {
+  if (!env.hasMongo) {
     console.warn(
-      "⚠️ MONGO_URI is not set. Starting server without MongoDB connection."
+      "⚠️  MONGO_URI not set — server will start without a database. DB-backed endpoints will return 503."
     );
     return;
   }
@@ -139,7 +157,7 @@ const connectDb = async () => {
   } catch (err) {
     console.error("❌ MongoDB connection failed:", err.message);
     console.error(
-      "ℹ️ Server will continue running. Auth endpoints will return 503 until DB is reachable."
+      "ℹ️  Server will continue running. Auth endpoints will return 503 until DB is reachable."
     );
   }
 };

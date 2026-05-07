@@ -156,6 +156,8 @@ function selectVibe(dayNum, vibe) {
 }
 
 function handleGenerate() {
+  console.log('[customize] handleGenerate fired', dayPreferences);
+
   dayPreferences.forEach(pref => {
     if (!pref.vibe) pref.vibe = 'adventure'
   })
@@ -195,5 +197,3 @@ document.addEventListener('DOMContentLoaded', () => {
   init();
   setTimeout(setupReveal, 100);
 });
-
-<script src="js/utils.js"></script>

@@ -1,15 +1,19 @@
-import { generateItinerary } from "../services/openaiService.js";
+// controllers/tripController.js
+// Handles POST /api/generate-trip — validates input and delegates to the Gemini service.
 
-const generateTrip = async (req, res) => {
+import { generateItinerary } from "../services/geminiService.js";
+
+export async function generateTrip(req, res) {
+  // ---- 1. Pull inputs from the request body ----
+  const { destination, days, people, budget, style } = req.body || {};
+
+  // ---- 2. Basic validation: every field is required ----
+  if (!destination || !days || !people || !budget || !style) {
+    return res.status(400).json({ error: "Missing fields" });
+  }
+
+  // ---- 3. Generate the itinerary via Gemini ----
   try {
-    const { destination, days, people, budget, style } = req.body || {};
-
-    if (!destination || !days || !people || !budget || !style) {
-      return res.status(400).json({
-        error: "destination, days, people, budget, and style are required",
-      });
-    }
-
     const itinerary = await generateItinerary({
       destination,
       days,
@@ -18,13 +22,8 @@ const generateTrip = async (req, res) => {
       style,
     });
 
-    return res.status(200).json(itinerary);
+    return res.status(200).json({ success: true, itinerary });
   } catch (error) {
-    const statusCode = error.statusCode || 500;
-    return res.status(statusCode).json({
-      error: error.message || "Failed to generate itinerary",
-    });
+    return res.status(500).json({ success: false, error: error.message });
   }
-};
-
-export { generateTrip };
+}

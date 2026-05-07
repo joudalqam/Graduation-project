@@ -138,6 +138,21 @@ const generateItinerary = async (req, res) => {
         fetchPlacesFromGoogle(destination, "cafe"),
       ]);
 
+    console.log(
+      `🧾 [Itinerary] Google Places counts for "${destination}": attractions=${attractionsResult.length}, restaurants=${restaurantsResult.length}, cafes=${cafesResult.length}`
+    );
+
+    if (
+      attractionsResult.length === 0 &&
+      restaurantsResult.length === 0 &&
+      cafesResult.length === 0
+    ) {
+      return res.status(502).json({
+        success: false,
+        message: `No places found for "${destination}". Check that GOOGLE_MAPS_API_KEY is set, the Places API is enabled, and billing is active.`,
+      });
+    }
+
     const rankedAttractions = rankPlaces(attractionsResult, userPreferences);
     const rankedRestaurants = rankPlaces(restaurantsResult, userPreferences);
     const rankedCafes = rankPlaces(cafesResult, userPreferences);
@@ -165,6 +180,11 @@ const generateItinerary = async (req, res) => {
       mainTripType: tripType || null,
       budget: budget || null,
       travelers: parsedTravelers,
+      candidateCounts: {
+        attractions: rankedAttractions.length,
+        restaurants: rankedRestaurants.length,
+        cafes: rankedCafes.length,
+      },
     };
 
     return res.status(200).json({

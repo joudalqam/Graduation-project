@@ -223,6 +223,8 @@ async function fetchAndRenderItinerary() {
     if (budget) payload.budget = budget;
     if (tripType) payload.tripType = tripType;
 
+    console.log("[result] POST /api/itinerary/generate payload:", payload);
+
     const response = await fetch(`${API_BASE_URL}/api/itinerary/generate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -230,6 +232,16 @@ async function fetchAndRenderItinerary() {
     });
 
     const data = await response.json();
+    console.log(
+      "[result] backend response:",
+      response.status,
+      "candidateCounts=",
+      data?.summary?.candidateCounts,
+      "totalActivities=",
+      data?.summary?.totalActivities,
+      "raw=",
+      data
+    );
 
     if (!response.ok || !data.success || !Array.isArray(data.itinerary)) {
       const msg = data?.message || `Request failed (${response.status})`;
