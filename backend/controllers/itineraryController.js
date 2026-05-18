@@ -1,6 +1,7 @@
-import { fetchPlacesFromGoogle } from "../services/googlePlacesService.js";
+import { collectPlacesForDestination } from "../services/googlePlacesService.js";
 import { rankPlaces } from "../services/placeRankingService.js";
 import { generateTripItinerary } from "../services/itineraryService.js";
+import { getStyleQueries, resolveGovernorate } from "../data/jordanGovernorates.js";
 
 const allowedBudgets = ["low", "medium", "high"];
 const allowedTripTypes = [
@@ -9,6 +10,7 @@ const allowedTripTypes = [
   "romantic",
   "cultural",
   "relaxation",
+  "food",
 ];
 
 const generateItinerary = async (req, res) => {
@@ -131,11 +133,26 @@ const generateItinerary = async (req, res) => {
           : null,
     };
 
+    const styleExtraQueries = getStyleQueries(destination, tripType);
+
     const [attractionsResult, restaurantsResult, cafesResult] =
       await Promise.all([
-        fetchPlacesFromGoogle(destination, "tourist_attraction"),
-        fetchPlacesFromGoogle(destination, "restaurant"),
-        fetchPlacesFromGoogle(destination, "cafe"),
+        collectPlacesForDestination({
+          destination,
+          category: "attraction",
+          type: "tourist_attraction",
+          extraQueries: styleExtraQueries,
+        }),
+        collectPlacesForDestination({
+          destination,
+          category: "restaurant",
+          type: "restaurant",
+        }),
+        collectPlacesForDestination({
+          destination,
+          category: "cafe",
+          type: "cafe",
+        }),
       ]);
 
     console.log(
@@ -147,9 +164,13 @@ const generateItinerary = async (req, res) => {
       restaurantsResult.length === 0 &&
       cafesResult.length === 0
     ) {
+      const gov = resolveGovernorate(destination);
+      const hint = gov
+        ? `We recognised "${destination}" as ${gov.name} but Google Places returned no usable results. Try again in a moment.`
+        : `"${destination}" is not in our Jordan governorate list. Please pick a Jordanian city.`;
       return res.status(502).json({
         success: false,
-        message: `No places found for "${destination}". Check that GOOGLE_MAPS_API_KEY is set, the Places API is enabled, and billing is active.`,
+        message: hint,
       });
     }
 
@@ -160,6 +181,7 @@ const generateItinerary = async (req, res) => {
     const itinerary = generateTripItinerary({
       destination,
       tripDuration: parsedTripDuration,
+      tripType: tripType || null,
       attractions: rankedAttractions,
       restaurants: rankedRestaurants,
       cafes: rankedCafes,

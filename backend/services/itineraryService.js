@@ -1,30 +1,123 @@
 // services/itineraryService.js
-// Two responsibilities:
-//   1. generateTripItinerary  — legacy deterministic builder used by
-//      /api/itinerary/generate (kept for backward compatibility).
-//   2. buildAIPoweredItinerary — orchestrates Google Places + Gemini and
-//      returns the final response shape consumed by /api/ai/generate-plan.
+// Builds itineraries for /api/itinerary/generate (legacy/deterministic with
+// controlled randomness) and /api/ai/generate-plan (Gemini-powered).
+//
+// Diversification strategy
+// ────────────────────────
+// Same destination → same top-ranked places every time was the user-reported
+// "AI keeps repeating Amman places". Fixes:
+//   1. Pool the top N candidates instead of the top 3 — weighted sampling.
+//   2. Track *recently used* placeIds per destination across calls (in-memory
+//      LRU). On regeneration, those IDs are pushed to the bottom of the pool.
+//   3. Inject a random seed and time-of-day jitter so two calls within the
+//      same minute don't return the exact same trio.
 
 import {
-  searchJordanPlaces,
+  collectPlacesForDestination,
   dedupeAndFilterPlaces,
 } from "./googlePlacesService.js";
 import { generateAIPlan } from "./geminiService.js";
+import {
+  resolveGovernorate,
+  getStyleQueries,
+} from "../data/jordanGovernorates.js";
 
-// ===========================================================================
-// LEGACY FLOW
-// ===========================================================================
+// ───────────────────────────────────────────────────────────────────────────
+// Recently-used cache (in-memory, per-destination, bounded)
+// ───────────────────────────────────────────────────────────────────────────
+const RECENT_CACHE_LIMIT = 30; // per destination
+const RECENT_TTL_MS = 1000 * 60 * 60; // 1h
+const _recent = new Map(); // destinationKey -> [{ id, at }]
 
-const dailyTimeSlots = [
-  { time: "10:00 AM", activityType: "tourist_attraction", label: "Morning attraction visit" },
-  { time: "2:00 PM", activityType: "restaurant", label: "Lunch break" },
-  { time: "5:00 PM", activityType: "cafe", label: "Cafe / relaxation stop" },
-];
+const recentKey = (destination, tripType = "any") =>
+  `${String(destination || "").toLowerCase().trim()}::${String(tripType || "any").toLowerCase()}`;
 
-const normalizeCategory = (activityType) => {
-  if (activityType === "restaurant") return "restaurant";
-  if (activityType === "cafe") return "cafe";
-  return "attraction";
+const getRecentIds = (destination, tripType) => {
+  const key = recentKey(destination, tripType);
+  const arr = (_recent.get(key) || []).filter(
+    (e) => Date.now() - e.at < RECENT_TTL_MS
+  );
+  _recent.set(key, arr);
+  return new Set(arr.map((e) => e.id));
+};
+
+const markRecent = (destination, tripType, ids) => {
+  const key = recentKey(destination, tripType);
+  const arr = (_recent.get(key) || []).filter(
+    (e) => Date.now() - e.at < RECENT_TTL_MS
+  );
+  for (const id of ids) {
+    if (!id) continue;
+    arr.push({ id, at: Date.now() });
+  }
+  // Trim to last N.
+  const trimmed = arr.slice(-RECENT_CACHE_LIMIT);
+  _recent.set(key, trimmed);
+};
+
+// Weighted sample without replacement: higher rankingScore wins more often
+// but every entry has a chance. Returns up to `n` picks.
+const weightedSampleWithoutReplacement = (items, n) => {
+  const pool = items.slice();
+  const picks = [];
+  for (let i = 0; i < n && pool.length > 0; i++) {
+    const weights = pool.map((p) => Math.max(1, (p.rankingScore ?? 0) + 5));
+    const total = weights.reduce((s, w) => s + w, 0);
+    let r = Math.random() * total;
+    let idx = 0;
+    for (; idx < weights.length; idx++) {
+      r -= weights[idx];
+      if (r <= 0) break;
+    }
+    if (idx >= pool.length) idx = pool.length - 1;
+    picks.push(pool[idx]);
+    pool.splice(idx, 1);
+  }
+  return picks;
+};
+
+// ───────────────────────────────────────────────────────────────────────────
+// Legacy (Google Places-only) flow
+// ───────────────────────────────────────────────────────────────────────────
+
+const TRIP_TYPE_TO_QUERY_KEY = {
+  adventure: "adventure",
+  cultural: "cultural",
+  family: "family",
+  romantic: "romantic",
+  relaxation: "relaxation",
+  food: "food",
+};
+
+const TIME_SLOT_BLUEPRINT = (tripType) => {
+  // Choose the slot ordering based on trip style so each kind of trip has a
+  // distinct feel even when sharing the same candidate pool.
+  const base = [
+    { time: "9:30 AM", activityType: "tourist_attraction", title: "Morning highlight" },
+    { time: "12:30 PM", activityType: "restaurant", title: "Lunch break" },
+    { time: "3:00 PM", activityType: "tourist_attraction", title: "Afternoon experience" },
+    { time: "6:30 PM", activityType: "restaurant", title: "Dinner" },
+    { time: "8:30 PM", activityType: "cafe", title: "Evening cafe stop" },
+  ];
+
+  if (tripType === "adventure") {
+    base[0].title = "Outdoor adventure";
+    base[2].title = "Adventure activity";
+  } else if (tripType === "cultural") {
+    base[0].title = "Cultural / historical site";
+    base[2].title = "Museum / heritage stop";
+  } else if (tripType === "family") {
+    base[0].title = "Family-friendly attraction";
+    base[2].title = "Family activity";
+  } else if (tripType === "romantic") {
+    base[0].title = "Scenic viewpoint";
+    base[2].title = "Romantic spot";
+  } else if (tripType === "relaxation") {
+    base[0].title = "Relaxation / wellness stop";
+    base[2].title = "Cafe / spa";
+  }
+
+  return base;
 };
 
 const formatPlaceForItinerary = (place, activityType) => {
@@ -40,83 +133,138 @@ const formatPlaceForItinerary = (place, activityType) => {
     distanceKm: place.distanceKm ?? null,
     rankingScore: place.rankingScore ?? null,
     rankingReasons: place.rankingReasons || [],
+    photo: place.photos?.[0]?.url || null,
     location: place.location,
-    type: place.type || normalizeCategory(activityType),
+    type: place.type || activityType,
     types: place.types || [],
   };
 };
 
-const getNextUnusedPlace = (places = [], usedPlaceIds) => {
-  while (places.length > 0) {
-    const place = places.shift();
-    if (!place?.placeId) return place;
-    if (!usedPlaceIds.has(place.placeId)) {
-      usedPlaceIds.add(place.placeId);
-      return place;
-    }
-  }
-  return null;
-};
-
-const buildDayNotes = (dayNumber) => [
-  `Day ${dayNumber} is planned with a balanced mix of sightseeing, food, and relaxation.`,
-  "Places are selected based on ranking score, distance, budget, and trip type.",
-  "You can replace any activity later with another recommended nearby place.",
-];
-
-const buildDailyItinerary = (dayNumber, destination, placesByType, usedPlaceIds) => {
-  const activities = dailyTimeSlots.map((slot) => {
-    const availablePlaces = placesByType[slot.activityType] || [];
-    const place = getNextUnusedPlace(availablePlaces, usedPlaceIds);
-    return {
-      time: slot.time,
-      activityType: slot.activityType,
-      title: slot.label,
-      place: formatPlaceForItinerary(place, slot.activityType),
-    };
-  });
-
-  return {
-    day: dayNumber,
-    dayTitle: `Day ${dayNumber} in ${destination}`,
-    notes: buildDayNotes(dayNumber),
-    activities,
+const noteFor = (tripType, dayNumber) => {
+  const generic = [
+    "Places are diversified across days so every regeneration feels fresh.",
+    "You can replace any activity later with another recommended nearby place.",
+  ];
+  const flavour = {
+    adventure: `Day ${dayNumber}: a mix of high-energy outdoor stops with refuel breaks.`,
+    cultural: `Day ${dayNumber}: deep dive into the local history and heritage.`,
+    family: `Day ${dayNumber}: family-paced itinerary with shorter walks and easy stops.`,
+    romantic: `Day ${dayNumber}: scenic viewpoints and intimate restaurants.`,
+    relaxation: `Day ${dayNumber}: slow-paced day with cafés, spas, and quiet corners.`,
+    food: `Day ${dayNumber}: curated culinary tour through local kitchens.`,
   };
+  return [
+    flavour[tripType] || `Day ${dayNumber}: a balanced mix of sightseeing, food, and downtime.`,
+    ...generic,
+  ];
 };
 
-const generateTripItinerary = ({
-  destination = "Selected destination",
-  tripDuration = 1,
-  attractions = [],
-  restaurants = [],
-  cafes = [],
+// Pick from a category, prioritising places NOT in the recent-IDs set.
+// Falls back to the broader pool if the fresh set is exhausted.
+const pickFromPool = (poolHead, poolTail, count, takenIds) => {
+  const remaining = poolHead.filter((p) => !takenIds.has(p.placeId));
+  const picks = weightedSampleWithoutReplacement(remaining, count);
+  if (picks.length < count) {
+    const need = count - picks.length;
+    const tailFresh = poolTail.filter(
+      (p) => !takenIds.has(p.placeId) && !picks.find((x) => x.placeId === p.placeId)
+    );
+    picks.push(...weightedSampleWithoutReplacement(tailFresh, need));
+  }
+  for (const p of picks) if (p.placeId) takenIds.add(p.placeId);
+  return picks;
+};
+
+const buildLegacyItinerary = ({
+  destination,
+  tripDuration,
+  tripType,
+  attractions,
+  restaurants,
+  cafes,
 }) => {
-  const duration = Number(tripDuration);
-  const safeDuration =
-    Number.isNaN(duration) || duration < 1 ? 1 : Math.min(duration, 14);
+  const safeDuration = Math.max(1, Math.min(14, Number(tripDuration) || 1));
 
-  const placesByType = {
-    tourist_attraction: [...attractions],
-    restaurant: [...restaurants],
-    cafe: [...cafes],
+  // Split each ranked pool into "fresh" (top N not recently used) and "tail".
+  const recentIds = getRecentIds(destination, tripType);
+
+  const splitPool = (list, headSize) => {
+    const head = [];
+    const tail = [];
+    for (const p of list) {
+      if (recentIds.has(p.placeId)) tail.push(p);
+      else if (head.length < headSize) head.push(p);
+      else tail.push(p);
+    }
+    return { head, tail };
   };
 
-  const usedPlaceIds = new Set();
-  const itinerary = [];
+  // Bigger head pools mean more variety per regeneration.
+  const attractionsSplit = splitPool(attractions, 15);
+  const restaurantsSplit = splitPool(restaurants, 12);
+  const cafesSplit = splitPool(cafes, 10);
 
-  for (let day = 1; day <= safeDuration; day += 1) {
-    itinerary.push(buildDailyItinerary(day, destination, placesByType, usedPlaceIds));
+  const slotsPerDay = TIME_SLOT_BLUEPRINT(tripType);
+  const takenIds = new Set();
+  const itinerary = [];
+  const usedPlaceIds = [];
+
+  for (let day = 1; day <= safeDuration; day++) {
+    const activities = slotsPerDay.map((slot) => {
+      let pick;
+      if (slot.activityType === "tourist_attraction") {
+        pick = pickFromPool(attractionsSplit.head, attractionsSplit.tail, 1, takenIds)[0];
+      } else if (slot.activityType === "restaurant") {
+        pick = pickFromPool(restaurantsSplit.head, restaurantsSplit.tail, 1, takenIds)[0];
+      } else {
+        pick = pickFromPool(cafesSplit.head, cafesSplit.tail, 1, takenIds)[0];
+      }
+      if (pick?.placeId) usedPlaceIds.push(pick.placeId);
+      return {
+        time: slot.time,
+        activityType: slot.activityType,
+        title: slot.title,
+        place: formatPlaceForItinerary(pick, slot.activityType),
+      };
+    });
+
+    itinerary.push({
+      day,
+      dayTitle: `Day ${day} in ${destination}`,
+      notes: noteFor(tripType, day),
+      activities,
+    });
   }
+
+  markRecent(destination, tripType, usedPlaceIds);
 
   return itinerary;
 };
 
-// ===========================================================================
-// AI-POWERED FLOW
-// ===========================================================================
+// Public legacy entry — kept as `generateTripItinerary` so the controller
+// signature doesn't change.
+const generateTripItinerary = ({
+  destination = "Selected destination",
+  tripDuration = 1,
+  tripType = null,
+  attractions = [],
+  restaurants = [],
+  cafes = [],
+}) => {
+  return buildLegacyItinerary({
+    destination,
+    tripDuration,
+    tripType,
+    attractions,
+    restaurants,
+    cafes,
+  });
+};
 
-// Maps each interest the user can pick to one or more Google Places text
-// queries.  We keep them generic so they work in any Jordanian city.
+// ───────────────────────────────────────────────────────────────────────────
+// AI-POWERED FLOW
+// ───────────────────────────────────────────────────────────────────────────
+
 const INTEREST_QUERIES = {
   historical: ["historical sites", "museums", "ancient ruins"],
   adventure: ["adventure activities", "hiking trails", "outdoor adventures"],
@@ -128,19 +276,20 @@ const INTEREST_QUERIES = {
   family: ["family attractions", "amusement parks", "kid friendly places"],
 };
 
-// Budget → hotel search keyword.  Used to bias the hotel candidates.
 const HOTEL_QUERY_BY_BUDGET = {
   low: "budget hotels",
   medium: "mid-range hotels",
   luxury: "luxury hotels",
 };
 
-// Run a list of text queries in parallel and merge/dedupe the results.
 const fetchByQueries = async (queries, destination, fallbackCategory) => {
   const tasks = queries.map((q) =>
-    searchJordanPlaces(`${q} in ${destination}`, fallbackCategory).catch((err) => {
-      // Don't let one failed query take down the whole flow.
-      console.warn(`⚠️  Google Places query failed for "${q}":`, err.message);
+    collectPlacesForDestination({
+      destination,
+      category: fallbackCategory,
+      extraQueries: [q],
+    }).catch((err) => {
+      console.warn(`⚠️ Google Places query failed for "${q}":`, err.message);
       return [];
     })
   );
@@ -148,29 +297,42 @@ const fetchByQueries = async (queries, destination, fallbackCategory) => {
   return batches.flat();
 };
 
-// Pull candidate places for every category we'll feed to Gemini.
-const collectCandidatePlaces = async ({ destination, interests = [], budget }) => {
+const collectCandidatePlaces = async ({ destination, interests = [], budget, tripType }) => {
   const interestQueries = interests.flatMap((i) => INTEREST_QUERIES[i] || []);
+  const styleQueries = getStyleQueries(destination, tripType);
 
-  // Always include attractions, restaurants, cafes, and hotels — Gemini will
-  // pick from these to fill morning/afternoon/evening slots.
   const [
     attractionsRaw,
-    interestsRaw,
     restaurantsRaw,
     cafesRaw,
     hotelsRaw,
+    interestsRaw,
   ] = await Promise.all([
-    searchJordanPlaces(`tourist attractions in ${destination}`, "attraction"),
+    collectPlacesForDestination({
+      destination,
+      category: "attraction",
+      type: "tourist_attraction",
+      extraQueries: styleQueries,
+    }),
+    collectPlacesForDestination({
+      destination,
+      category: "restaurant",
+      type: "restaurant",
+    }),
+    collectPlacesForDestination({
+      destination,
+      category: "cafe",
+      type: "cafe",
+    }),
+    collectPlacesForDestination({
+      destination,
+      category: "hotel",
+      type: "lodging",
+      extraQueries: [HOTEL_QUERY_BY_BUDGET[budget] || "hotels"],
+    }),
     interestQueries.length
       ? fetchByQueries(interestQueries, destination, "activity")
       : Promise.resolve([]),
-    searchJordanPlaces(`restaurants in ${destination}`, "restaurant"),
-    searchJordanPlaces(`cafes in ${destination}`, "cafe"),
-    searchJordanPlaces(
-      `${HOTEL_QUERY_BY_BUDGET[budget] || "hotels"} in ${destination}`,
-      "hotel"
-    ),
   ]);
 
   return {
@@ -182,10 +344,6 @@ const collectCandidatePlaces = async ({ destination, interests = [], budget }) =
   };
 };
 
-// Gemini sometimes drops or slightly mutates coordinates.  Re-anchor each
-// activity to the real place we found in Google Places so the frontend always
-// gets accurate lat/lng.  Also enrich with rating, address, and photo URL
-// for the UI.
 const enrichActivitiesWithPlaceData = (aiItinerary, placesByCategory) => {
   const allPlaces = [
     ...placesByCategory.attractions,
@@ -206,8 +364,7 @@ const enrichActivitiesWithPlaceData = (aiItinerary, placesByCategory) => {
     ...day,
     activities: (day.activities || []).map((activity) => {
       const match = lookup.get(activity.place?.trim().toLowerCase());
-      if (!match) return activity; // Gemini returned a name we don't have — keep its data verbatim
-
+      if (!match) return activity;
       return {
         ...activity,
         coordinates: {
@@ -224,24 +381,48 @@ const enrichActivitiesWithPlaceData = (aiItinerary, placesByCategory) => {
   }));
 };
 
-// Public orchestrator consumed by aiController.
-// preferences shape:
-//   { destination, duration, budget, interests, transportation, travelStyle, companions }
 const buildAIPoweredItinerary = async (preferences) => {
-  // 1. Pull real Jordan places matching the user's destination and interests.
   const placesByCategory = await collectCandidatePlaces({
     destination: preferences.destination,
     interests: preferences.interests,
     budget: preferences.budget,
+    tripType: preferences.travelStyle || preferences.tripType,
   });
 
-  // 2. Ask Gemini to organise them into a day-by-day plan.
-  const aiResponse = await generateAIPlan({ preferences, placesByCategory });
+  const recentIds = getRecentIds(
+    preferences.destination,
+    preferences.travelStyle || preferences.tripType
+  );
+  const avoidNames = [];
+  for (const cat of Object.values(placesByCategory)) {
+    for (const p of cat) {
+      if (p.placeId && recentIds.has(p.placeId)) avoidNames.push(p.name);
+      if (avoidNames.length >= 12) break;
+    }
+  }
 
-  // 3. Re-anchor activities to the real place data (coordinates, rating, photo).
+  const aiResponse = await generateAIPlan({
+    preferences,
+    placesByCategory,
+    avoidPlaceNames: avoidNames,
+  });
+
   const enrichedItinerary = enrichActivitiesWithPlaceData(
     aiResponse.itinerary,
     placesByCategory
+  );
+
+  // Record the place ids used so the next regeneration avoids them.
+  const used = [];
+  for (const day of enrichedItinerary) {
+    for (const a of day.activities || []) {
+      if (a.placeId) used.push(a.placeId);
+    }
+  }
+  markRecent(
+    preferences.destination,
+    preferences.travelStyle || preferences.tripType,
+    used
   );
 
   return {
@@ -267,4 +448,9 @@ const buildAIPoweredItinerary = async (preferences) => {
   };
 };
 
-export { generateTripItinerary, buildAIPoweredItinerary };
+export {
+  generateTripItinerary,
+  buildAIPoweredItinerary,
+  getRecentIds,
+  markRecent,
+};

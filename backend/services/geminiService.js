@@ -187,8 +187,13 @@ const buildCandidateBlock = (placesByCategory, perCategoryLimit = 12) => {
   return block;
 };
 
-const buildAIPlanUserPrompt = ({ preferences, placesByCategory }) => {
+const buildAIPlanUserPrompt = ({ preferences, placesByCategory, avoidPlaceNames = [] }) => {
   const candidatePlaces = buildCandidateBlock(placesByCategory);
+  const seed = Math.floor(Math.random() * 1e9);
+
+  const avoidBlock = avoidPlaceNames.length
+    ? `\nRECENTLY USED (deprioritise these — pick something fresh whenever possible):\n${JSON.stringify(avoidPlaceNames, null, 2)}\n`
+    : "";
 
   return `
 USER PREFERENCES:
@@ -196,6 +201,12 @@ ${JSON.stringify(preferences, null, 2)}
 
 CANDIDATE PLACES (use these and only these — copy names and coordinates exactly):
 ${JSON.stringify(candidatePlaces, null, 2)}
+${avoidBlock}
+RANDOMISATION SEED: ${seed}
+Use this seed to produce a different valid itinerary every call. Vary which
+attractions, restaurants, and cafes you pick across days. If two valid plans
+are equally good, prefer the one that introduces places not used on previous
+generations.
 
 TASK:
 Build a ${preferences.duration}-day itinerary in ${preferences.destination}, Jordan.
@@ -204,6 +215,14 @@ ${JSON.stringify(preferences.interests)}, the travel style "${preferences.travel
 the transportation preference "${preferences.transportation}", and the companion
 type "${preferences.companions}".
 
+DIVERSIFICATION RULES:
+- Spread restaurants and cafes across different neighborhoods when possible.
+- Don't reuse the same place twice across days.
+- Match each activity's category to the slot (mornings = attractions/outdoor;
+  midday = restaurants; evenings = cafe/dinner/cultural).
+- Strongly prefer places whose 'types' or 'name' match the user's travel
+  style (adventure, cultural, food, family, romantic, relaxation).
+
 Return ONLY the JSON object described in the system instructions. Nothing else.
 `.trim();
 };
@@ -211,7 +230,7 @@ Return ONLY the JSON object described in the system instructions. Nothing else.
 // Public function consumed by itineraryService.
 // preferences: { destination, duration, budget, interests, transportation, travelStyle, companions }
 // placesByCategory: { attractions, restaurants, cafes, activities, hotels }
-export async function generateAIPlan({ preferences, placesByCategory }) {
+export async function generateAIPlan({ preferences, placesByCategory, avoidPlaceNames = [] }) {
   const genAI = getClient();
 
   const totalCandidates = Object.values(placesByCategory).reduce(
@@ -229,11 +248,17 @@ export async function generateAIPlan({ preferences, placesByCategory }) {
     systemInstruction: AI_PLAN_SYSTEM_PROMPT,
     generationConfig: {
       responseMimeType: "application/json",
-      temperature: 0.6,
+      temperature: 0.95,
+      topP: 0.95,
+      topK: 40,
     },
   });
 
-  const userPrompt = buildAIPlanUserPrompt({ preferences, placesByCategory });
+  const userPrompt = buildAIPlanUserPrompt({
+    preferences,
+    placesByCategory,
+    avoidPlaceNames,
+  });
 
   let raw;
   try {

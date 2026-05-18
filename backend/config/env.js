@@ -56,6 +56,12 @@ const snapshot = {
   hasMongo: Boolean(process.env.MONGO_URI),
   hasJwt: Boolean(process.env.JWT_SECRET),
   hasGoogleMaps: Boolean(process.env.GOOGLE_MAPS_API_KEY),
+  hasGoogleOAuth: Boolean(process.env.GOOGLE_CLIENT_ID),
+  hasSmtp: Boolean(
+    (process.env.SMTP_SERVICE || process.env.SMTP_HOST) &&
+      process.env.SMTP_USER &&
+      process.env.SMTP_PASS
+  ),
   port: Number(process.env.PORT) || 5000,
   envPath: ENV_PATH,
 };
@@ -82,6 +88,20 @@ const printStartupBanner = () => {
   console.log(
     `   ${snapshot.hasGoogleMaps ? "✅" : "⚠️ "} GOOGLE_MAPS_API_KEY ${
       snapshot.hasGoogleMaps ? "configured" : "missing (Places API will fail)"
+    }`
+  );
+  console.log(
+    `   ${snapshot.hasGoogleOAuth ? "✅" : "⚠️ "} GOOGLE_CLIENT_ID    ${
+      snapshot.hasGoogleOAuth
+        ? "configured"
+        : "missing (Google sign-in disabled)"
+    }`
+  );
+  console.log(
+    `   ${snapshot.hasSmtp ? "✅" : "⚠️ "} SMTP credentials    ${
+      snapshot.hasSmtp
+        ? "configured"
+        : "missing (verification emails use Ethereal preview)"
     }`
   );
   console.log("──────────────────────────────────────────────");
