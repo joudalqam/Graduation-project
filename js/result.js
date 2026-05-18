@@ -202,6 +202,26 @@ function renderItineraryError(message) {
   `;
 }
 
+async function fetchWithRetry(url, options, { retries = 2, retryDelayMs = 800 } = {}) {
+  let lastErr = null;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const controller = new AbortController();
+      const t = setTimeout(() => controller.abort(), 30000);
+      const res = await fetch(url, { ...options, signal: controller.signal });
+      clearTimeout(t);
+      return res;
+    } catch (err) {
+      lastErr = err;
+      console.warn(`[result] fetch attempt ${attempt + 1} failed:`, err.message);
+      if (attempt < retries) {
+        await new Promise((r) => setTimeout(r, retryDelayMs * (attempt + 1)));
+      }
+    }
+  }
+  throw lastErr || new Error("Network error");
+}
+
 async function fetchAndRenderItinerary() {
   try {
     const tripType =
@@ -225,13 +245,19 @@ async function fetchAndRenderItinerary() {
 
     console.log("[result] POST /api/itinerary/generate payload:", payload);
 
-    const response = await fetch(`${API_BASE_URL}/api/itinerary/generate`, {
+    const response = await fetchWithRetry(`${API_BASE_URL}/api/itinerary/generate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
 
-    const data = await response.json();
+    let data;
+    try {
+      data = await response.json();
+    } catch (e) {
+      renderItineraryError(`Server returned a non-JSON response (status ${response.status}).`);
+      return;
+    }
     console.log(
       "[result] backend response:",
       response.status,
@@ -256,12 +282,23 @@ async function fetchAndRenderItinerary() {
     renderMapFromItinerary();
   } catch (error) {
     console.error("Error fetching itinerary:", error);
+    const isAbort = error?.name === "AbortError";
     renderItineraryError(
-      "Could not reach the server. Make sure the backend is running on " +
-        API_BASE_URL +
-        ".",
+      isAbort
+        ? "The server took too long to respond. Please regenerate to try again."
+        : "Could not reach the server. Make sure the backend is running on " +
+            API_BASE_URL +
+            "."
     );
   }
+}
+
+async function regenerateItinerary() {
+  itineraryData = null;
+  flatPlaces = [];
+  if (map) clearMap();
+  renderItineraryLoading();
+  await fetchAndRenderItinerary();
 }
 
 // Walk the days/activities and produce an ordered list of
@@ -623,17 +660,26 @@ function sendToWhatsApp() {
 }
 
 function saveTrip() {
-  const saved = JSON.parse(localStorage.getItem("savedTrips") || "[]");
-  const tripEntry = {
-    id: Date.now(),
-    tripData,
-    dayPreferences,
-    itinerary: itineraryData,
-    savedAt: new Date().toISOString(),
-  };
-  saved.push(tripEntry);
-  localStorage.setItem("savedTrips", JSON.stringify(saved));
-  alert("Trip saved successfully! ✅");
+  if (!itineraryData) {
+    alert("Please wait for the trip plan to finish generating before saving.");
+    return;
+  }
+  try {
+    const saved = JSON.parse(localStorage.getItem("savedTrips") || "[]");
+    const tripEntry = {
+      id: Date.now(),
+      tripData,
+      dayPreferences,
+      itinerary: itineraryData,
+      savedAt: new Date().toISOString(),
+    };
+    saved.push(tripEntry);
+    localStorage.setItem("savedTrips", JSON.stringify(saved));
+    alert("Trip saved successfully! ✅");
+  } catch (err) {
+    console.error("saveTrip failed:", err);
+    alert("Could not save the trip locally. Your browser storage may be full.");
+  }
 }
 
 function handleSignOut() {
@@ -663,4 +709,5 @@ window.initMap = initMap;
 window.sendToWhatsApp = sendToWhatsApp;
 window.saveTrip = saveTrip;
 window.handleSignOut = handleSignOut;
+window.regenerateItinerary = regenerateItinerary;
 document.addEventListener("DOMContentLoaded", init);
