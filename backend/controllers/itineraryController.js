@@ -6,7 +6,7 @@ import {
 
 const generateItinerary = async (req, res) => {
   try {
-    const { destination, days, dayTypes, tripDuration, tripType } = req.body || {};
+    const { destination, days, dayTypes, styles, interests, tripDuration, tripType } = req.body || {};
 
     const normalizedDestination = normalizeDestination(destination);
 
@@ -26,8 +26,16 @@ const generateItinerary = async (req, res) => {
       });
     }
 
-    const requestedDayTypes = Array.isArray(dayTypes) && dayTypes.length > 0
+    const selectedDayTypes = Array.isArray(dayTypes) && dayTypes.length > 0
       ? dayTypes
+      : Array.isArray(styles) && styles.length > 0
+        ? styles
+        : Array.isArray(interests) && interests.length > 0
+          ? interests
+          : null;
+
+    const requestedDayTypes = selectedDayTypes
+      ? selectedDayTypes
       : tripType
         ? Array.from({ length: parsedDays }, () => tripType)
         : Array.from({ length: parsedDays }, () => "Balanced");

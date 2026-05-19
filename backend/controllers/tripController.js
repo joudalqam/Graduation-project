@@ -2,11 +2,11 @@ import { generateItinerary } from "../services/openaiService.js";
 
 const generateTrip = async (req, res) => {
   try {
-    const { destination, days, people, budget, style } = req.body || {};
+    const { destination, days, people, budget, style, styles } = req.body || {};
 
-    if (!destination || !days || !people || !budget || !style) {
+    if (!destination || !days || !people || !budget || (!style && (!Array.isArray(styles) || styles.length === 0))) {
       return res.status(400).json({
-        error: "destination, days, people, budget, and style are required",
+        error: "destination, days, people, budget, and style or styles are required",
       });
     }
 
@@ -16,6 +16,7 @@ const generateTrip = async (req, res) => {
       people,
       budget,
       style,
+      styles,
     });
 
     return res.status(200).json(itinerary);

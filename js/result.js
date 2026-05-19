@@ -42,13 +42,15 @@ let routeLines = [];          // one polyline per day
 
 // ---------- Helpers: map frontend prefs -> backend preferences ----------
 
-// travelStyle (adventure | food | relaxing) -> backend tripType
+// travelStyle (adventure | food | shopping | relaxing) -> backend tripType
 function mapTravelStyleToTripType(style) {
   switch ((style || "").toLowerCase()) {
     case "adventure":
       return "adventure";
     case "food":
       return "cultural";
+    case "shopping":
+      return "shopping";
     case "relaxing":
       return "relaxation";
     default:
@@ -77,11 +79,34 @@ function pickDominantTripType(prefs, fallback) {
   if (!Array.isArray(prefs) || prefs.length === 0) return fallback;
   const counts = {};
   prefs.forEach((p) => {
-    if (!p?.vibe) return;
-    counts[p.vibe] = (counts[p.vibe] || 0) + 1;
+    const vibes = Array.isArray(p?.vibes)
+      ? p.vibes
+      : p?.vibe
+        ? [p.vibe]
+        : [];
+
+    vibes.forEach((vibe) => {
+      counts[vibe] = (counts[vibe] || 0) + 1;
+    });
   });
   const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
   return top ? mapTravelStyleToTripType(top[0]) : fallback;
+}
+
+function getDayVibes(pref) {
+  if (Array.isArray(pref?.vibes) && pref.vibes.length > 0) {
+    return pref.vibes;
+  }
+
+  if (pref?.vibe) {
+    return [pref.vibe];
+  }
+
+  return [];
+}
+
+function getPrimaryVibe(pref) {
+  return getDayVibes(pref)[0] || null;
 }
 
 // ---------- Init ----------
@@ -102,6 +127,7 @@ function init() {
   if (!dayPreferences.length) {
     dayPreferences = Array.from({ length: days }, (_, i) => ({
       day: i + 1,
+      vibes: [tripData.travelStyle || "adventure"],
       vibe: tripData.travelStyle || "adventure",
     }));
   }
@@ -135,10 +161,9 @@ function renderHeroPills() {
 }
 
 function renderTripSummary() {
-  const vibeStyle = tripData.travelStyle
-    ? tripData.travelStyle.charAt(0).toUpperCase() +
-      tripData.travelStyle.slice(1)
-    : "Adventure";
+  const primaryPreference = dayPreferences.find((pref) => getPrimaryVibe(pref)) || null;
+  const summaryStyle = getPrimaryVibe(primaryPreference) || tripData.travelStyle || "adventure";
+  const vibeStyle = summaryStyle.charAt(0).toUpperCase() + summaryStyle.slice(1);
 
   document.getElementById("tripSummary").innerHTML = `
     <div class="trip-summary-item">
@@ -215,9 +240,13 @@ async function fetchAndRenderItinerary() {
       destination: tripData.city,
       days: parseInt(tripData.days) || 1,
       dayTypes: dayPreferences.map((pref) => {
-        const vibe = String(pref?.vibe || tripType || "Balanced");
-        return vibe.charAt(0).toUpperCase() + vibe.slice(1);
+        const vibes = getDayVibes(pref);
+        const values = vibes.length > 0 ? vibes : [getPrimaryVibe(pref) || tripType || "Balanced"];
+        return values
+          .map((value) => String(value).charAt(0).toUpperCase() + String(value).slice(1))
+          .join(" + ");
       }),
+      styles: Array.from(new Set(dayPreferences.flatMap((pref) => getDayVibes(pref)))),
     };
 
     if (tripType) payload.tripType = tripType;
@@ -326,8 +355,11 @@ function renderItinerary() {
 
   itineraryData.forEach((day, dayIndex) => {
     const pref = dayPreferences[dayIndex];
-    const vibe = pref?.vibe || tripData.travelStyle || "adventure";
-    const dayBadge = vibe.charAt(0).toUpperCase() + vibe.slice(1);
+    const vibes = getDayVibes(pref);
+    const vibe = getPrimaryVibe(pref) || tripData.travelStyle || "adventure";
+    const dayBadge = vibes.length > 1
+      ? vibes.map((value) => value.charAt(0).toUpperCase() + value.slice(1)).join(" · ")
+      : vibe.charAt(0).toUpperCase() + vibe.slice(1);
 
     const card = document.createElement("div");
     card.className = "day-plan-card reveal";
@@ -626,7 +658,19 @@ function saveTrip() {
   };
   saved.push(tripEntry);
   localStorage.setItem("savedTrips", JSON.stringify(saved));
-  alert("Trip saved successfully! ✅");
+
+  const saveStatus = document.getElementById("saveStatus");
+  if (saveStatus) {
+    saveStatus.className = "form-status success";
+    saveStatus.textContent = "Trip saved successfully!";
+    saveStatus.hidden = false;
+
+    setTimeout(() => {
+      saveStatus.hidden = true;
+      saveStatus.textContent = "";
+      saveStatus.className = "form-status";
+    }, 3000);
+  }
 }
 
 function handleSignOut() {

@@ -36,8 +36,21 @@ if (darkToggle) {
 
 let isSignUp = false;
 
+function setupAuthValidation() {
+  if (!window.FormValidation) return;
+
+  window.FormValidation.bindLiveValidation(document.getElementById('authForm'));
+}
+
 function switchTab(tab) {
   isSignUp = tab === 'signup';
+
+  const validation = window.FormValidation;
+  const authForm = document.getElementById('authForm');
+
+  if (validation) {
+    validation.clearFormErrors(authForm);
+  }
 
   document.getElementById('signinTab').classList.toggle('active', !isSignUp);
   document.getElementById('signupTab').classList.toggle('active', isSignUp);
@@ -73,16 +86,64 @@ function switchTab(tab) {
 function handleAuth(e) {
   e.preventDefault();
 
-  const email = document.getElementById('email').value;
-  if (!email) return;
+  const validation = window.FormValidation;
+  const authForm = document.getElementById('authForm');
+
+  if (validation) {
+    validation.clearFormErrors(authForm);
+  }
+
+  const emailField = document.getElementById('email');
+  const passwordField = document.getElementById('password');
+  const fullNameField = document.getElementById('fullName');
+  const phoneField = document.getElementById('phone');
+
+  let isValid = true;
+
+  if (validation) {
+    isValid = validation.validateEmailField(emailField, 'Email') && isValid;
+    isValid = validation.validatePasswordField(passwordField, { minLength: 8 }) && isValid;
+
+    if (isSignUp) {
+      isValid = validation.validateRequiredField(fullNameField, 'Full name') && isValid;
+      isValid = validation.validatePhoneField(phoneField) && isValid;
+    }
+  }
+
+  if (!isValid) {
+    if (validation) {
+      validation.focusFirstInvalidField(authForm);
+    }
+    return;
+  }
+
+  const email = emailField.value.trim();
+  const password = passwordField.value;
+
+  const savedEmail = localStorage.getItem('userEmail');
+  const savedPassword = localStorage.getItem('userPassword');
+
+  if (!isSignUp && savedEmail && savedPassword) {
+    const credentialsMatch =
+      email.toLowerCase() === savedEmail.toLowerCase() && password === savedPassword;
+
+    if (!credentialsMatch) {
+      if (validation) {
+        validation.showFieldError(passwordField, 'Invalid email or password.');
+        validation.focusFirstInvalidField(authForm);
+      }
+      return;
+    }
+  }
 
   // Store login state
   localStorage.setItem('isLoggedIn', 'true');
   localStorage.setItem('userEmail', email);
+  localStorage.setItem('userPassword', password);
 
   if (isSignUp) {
-    const name = document.getElementById('fullName').value;
-    const phone = document.getElementById('phone').value;
+    const name = fullNameField.value.trim();
+    const phone = phoneField.value.trim();
     localStorage.setItem('userName', name);
     localStorage.setItem('userPhone', phone);
   }
@@ -107,3 +168,5 @@ function handleGoogleAuth() {
     location.href = 'index.html';
   }
 }
+
+document.addEventListener('DOMContentLoaded', setupAuthValidation);

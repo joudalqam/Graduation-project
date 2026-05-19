@@ -29,7 +29,7 @@ document.getElementById('darkToggle').addEventListener('click', function () {
 // Hero slide dots (use actual filenames present in project)
 const heroImages = [
   'daedsea.jpg',
-  'mountain-hiking.webp',
+  'mountain-hiking.jpeg',
   'petra.jpg',
 ];
 
@@ -207,9 +207,22 @@ function selectDestination(city) {
   document.getElementById('destinationSuggestions').style.display = 'none';
 }
 
+function setupValidationHooks() {
+  if (!window.FormValidation) return;
+
+  window.FormValidation.bindLiveValidation(document.getElementById('tripForm'));
+  window.FormValidation.bindLiveValidation(document.getElementById('contactForm'));
+}
+
 // Trip form submit
 function handleTripFormSubmit(e) {
   e.preventDefault();
+
+  const validation = window.FormValidation;
+  const tripForm = document.getElementById('tripForm');
+  if (validation) {
+    validation.clearFormErrors(tripForm);
+  }
 
   // Check if user is logged in
   const userEmail = localStorage.getItem('userEmail');
@@ -217,38 +230,99 @@ function handleTripFormSubmit(e) {
   const isLoggedIn = userEmail || userToken;
 
   if (!isLoggedIn) {
-    alert('Please sign in to generate your trip plan');
+    if (validation && tripForm) {
+      validation.showFormStatus(tripForm, 'Please sign in to generate your trip plan.', 'error');
+    }
     setTimeout(() => {
       location.href = 'login.html';
     }, 1500);
     return;
   }
 
-  // Validate destination is a Jordan city
-  const destination = document.getElementById('destination').value.trim();
+  const destinationField = document.getElementById('destination');
+  const daysField = document.getElementById('days');
+  const peopleField = document.getElementById('people');
+  const budgetField = document.getElementById('budget');
+
+  let isValid = true;
+
+  if (validation) {
+    isValid = validation.validateRequiredField(destinationField, 'Destination') && isValid;
+    isValid = validation.validateIntegerField(daysField, { label: 'Number of days', min: 1, max: 14 }) && isValid;
+    isValid = validation.validateIntegerField(peopleField, { label: 'Number of people', min: 1 }) && isValid;
+    isValid = validation.validateIntegerField(budgetField, { label: 'Budget', min: 100 }) && isValid;
+  }
+
+  const destination = destinationField.value.trim();
   const isValidCity = JORDAN_CITIES.some(city =>
     city.toLowerCase() === destination.toLowerCase()
   );
 
   if (!isValidCity) {
-    alert('Please enter a valid city in Jordan only');
+    if (validation) {
+      validation.showFieldError(destinationField, 'Please enter a valid city in Jordan only.');
+    }
+    isValid = false;
+  }
+
+  if (!isValid) {
+    if (validation) {
+      validation.focusFirstInvalidField(tripForm);
+    }
     return;
   }
 
   const tripData = {
     city: destination,
-    days: document.getElementById('days').value,
-    people: document.getElementById('people').value,
-    budget: document.getElementById('budget').value,
+    days: daysField.value,
+    people: peopleField.value,
+    budget: budgetField.value,
   };
 
   sessionStorage.setItem('tripData', JSON.stringify(tripData));
   location.href = 'customize.html';
 }
 
+function handleContactFormSubmit(e) {
+  e.preventDefault();
+
+  const validation = window.FormValidation;
+  const contactForm = document.getElementById('contactForm');
+
+  if (validation) {
+    validation.clearFormErrors(contactForm);
+  }
+
+  const nameField = document.getElementById('contactName');
+  const emailField = document.getElementById('contactEmail');
+  const messageField = document.getElementById('contactMessage');
+
+  let isValid = true;
+
+  if (validation) {
+    isValid = validation.validateRequiredField(nameField, 'Name') && isValid;
+    isValid = validation.validateEmailField(emailField, 'Email') && isValid;
+    isValid = validation.validateRequiredField(messageField, 'Message') && isValid;
+  }
+
+  if (!isValid) {
+    if (validation) {
+      validation.focusFirstInvalidField(contactForm);
+    }
+    return;
+  }
+
+  contactForm.reset();
+  if (validation) {
+    validation.clearFormErrors(contactForm);
+    validation.showFormStatus(contactForm, "Thanks! We received your message.", 'success');
+  }
+}
+
 // Initialize autocomplete on page load
 document.addEventListener('DOMContentLoaded', () => {
   setupDestinationAutocomplete();
+  setupValidationHooks();
   setupReveal();
 });
 
@@ -268,5 +342,3 @@ function setupReveal() {
   );
   els.forEach((el) => observer.observe(el));
 }
-
-document.addEventListener('DOMContentLoaded', setupReveal);

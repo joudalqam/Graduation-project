@@ -38,6 +38,15 @@ const DESTINATION_POOL = {
       "Traditional dessert tasting",
       "Art gallery visit in Weibdeh",
     ],
+    shopping: [
+      "Taj Mall",
+      "Abdali Mall",
+      "City Mall Amman",
+      "Mecca Mall",
+      "Downtown Amman markets",
+      "Souk Jara",
+      "local handicraft shops in Rainbow Street and Jabal Al Weibdeh",
+    ],
   },
   Petra: {
     attractions: [
@@ -66,6 +75,12 @@ const DESTINATION_POOL = {
       "Handicraft market browsing in Wadi Musa",
       "Evening cultural storytelling",
     ],
+    shopping: [
+      "Wadi Musa souvenir stalls",
+      "Petra visitor center gift shops",
+      "Local handicraft shops in Wadi Musa",
+      "Bedouin craft stalls near Little Petra",
+    ],
   },
   Aqaba: {
     attractions: [
@@ -93,6 +108,12 @@ const DESTINATION_POOL = {
       "Diving or introductory dive session",
       "Evening shisha and tea by the sea",
     ],
+    shopping: [
+      "Aqaba City Center Mall",
+      "Aqaba Souk",
+      "local souvenir shops on the Corniche",
+      "handicraft stalls near the old town",
+    ],
   },
   "Wadi Rum": {
     attractions: [
@@ -118,6 +139,11 @@ const DESTINATION_POOL = {
       "Jeep tour across red sand valleys",
       "Cultural tea stop with Bedouin hosts",
     ],
+    shopping: [
+      "Rum Village handicraft stalls",
+      "Bedouin craft tents in Wadi Rum",
+      "local souvenir stalls near the visitor area",
+    ],
   },
   "Dead Sea": {
     attractions: [
@@ -141,6 +167,12 @@ const DESTINATION_POOL = {
       "Sunset viewing over the basin",
       "Scenic drive through the Jordan Valley",
       "Visit to a nearby mosaic workshop in Madaba",
+    ],
+    shopping: [
+      "Madaba handicraft shops",
+      "mosaic stores in Madaba",
+      "Sweimeh resort gift shops",
+      "local souvenir stalls along the Dead Sea road",
     ],
   },
 };
@@ -170,10 +202,13 @@ const buildCandidatePool = (destination) => {
     attractions: shuffleList(pool.attractions),
     food: shuffleList(pool.food),
     experiences: shuffleList(pool.experiences),
+    shopping: shuffleList(pool.shopping),
   };
 };
 
 const buildPrompt = ({ destination, days, dayTypes, candidates }) => {
+  const hasShoppingInterest = dayTypes.some((dayType) => String(dayType).toLowerCase().includes("shopping"));
+
   return [
     "You are an expert Jordan travel planner.",
     "Return STRICT JSON only. No markdown, no code fences, no commentary.",
@@ -181,6 +216,9 @@ const buildPrompt = ({ destination, days, dayTypes, candidates }) => {
     "[{\"day\":1,\"type\":\"Adventure\",\"activities\":[{\"name\":\"Place name\",\"description\":\"Short description\",\"time\":\"Morning\"}]}]",
     "Each day must contain exactly 3 or 4 activities.",
     "Mix attractions, food, and local experiences across the full itinerary.",
+    hasShoppingInterest
+      ? "If any selected day type is Shopping, include Jordan-only shopping experiences such as malls, local markets, souvenir shops, shopping streets, and traditional bazaars. Prioritize places like Taj Mall, Abdali Mall, Downtown Amman markets, Souk Jara, and local handicraft shops where relevant."
+      : "",
     "Use realistic travel order and keep locations geographically logical for the destination.",
     "Do not repeat the same activity names within the itinerary.",
     "Do not use locations outside Jordan.",

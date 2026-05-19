@@ -11,29 +11,8 @@
     <nav class="navbar">
       <div class="navbar-inner">
         <a href="index.html" class="navbar-logo">
-          <svg
-            style="width: 32px; height: 32px"
-            viewBox="0 0 36 36"
-            fill="none"
-          >
-            <circle cx="18" cy="18" r="17" stroke="#0ABFBC" stroke-width="2" />
-            <ellipse
-              cx="18"
-              cy="18"
-              rx="8"
-              ry="17"
-              stroke="#0ABFBC"
-              stroke-width="1.5"
-            />
-            <line
-              x1="1"
-              y1="18"
-              x2="35"
-              y2="18"
-              stroke="#0ABFBC"
-              stroke-width="1.5"
-            />
-          </svg>
+          <img src="./logo_trip_planner.png" alt="Trip Planner" height="70" style="color-interpolation-filters: inver
+          t(1); width: auto;" />
           <span class="navbar-logo-text">Trip Planner</span>
         </a>
 
@@ -53,7 +32,7 @@
               id="moonIcon"
               xmlns="http://www.w3.org/2000/svg"
               width="20"
-              height="20"
+              height="25"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -114,7 +93,7 @@
     <div class="result-page">
       <div class="page-hero">
         <img
-          src="mountain-hiking.webp"
+          src="mountain-hiking.jpeg"
           alt="Trip destination"
         />
         <div class="page-hero-overlay"></div>
@@ -201,6 +180,8 @@
                 Regenerate Plan
               </button>
             </div>
+
+            <div id="saveStatus" class="form-status" hidden></div>
           </div>
 
           <div class="sidebar-card">
@@ -289,6 +270,7 @@
       <div class="footer-bottom">© 2024 Trip Planner. All rights reserved.</div>
     </footer>
 
+    <script src="js/validation.js"></script>
     <script src="js/result.js"></script>
     <script
       async
