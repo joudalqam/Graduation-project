@@ -5,10 +5,57 @@ const API = "http://localhost:5000/api";
   const saved = localStorage.getItem('darkMode');
   if (saved === 'enabled') {
     document.body.classList.add('dark');
-    const moonIcon = document.getElementById('moonIcon');
-    const sunIcon = document.getElementById('sunIcon');
-    if (moonIcon) moonIcon.style.display = 'none';
-    if (sunIcon) sunIcon.style.display = 'block';
+    // =========================================
+// Dark Mode + Logo Switch
+// =========================================
+
+const moonIcon = document.getElementById('moonIcon')
+const sunIcon = document.getElementById('sunIcon')
+
+function updateLogo(isDark) {
+  const logo = document.getElementById('logoImg')
+
+  if (!logo) return
+
+  logo.src = isDark ? 'white.png' : 'blue.png'
+}
+
+// Load saved mode
+if (localStorage.getItem('darkMode') === 'enabled') {
+  document.body.classList.add('dark')
+
+  if (moonIcon) moonIcon.style.display = 'none'
+  if (sunIcon) sunIcon.style.display = 'block'
+
+  updateLogo(true)
+} else {
+  updateLogo(false)
+}
+
+// Toggle dark mode
+const darkToggleBtn = document.getElementById('darkToggle')
+
+if (darkToggleBtn) {
+  darkToggleBtn.addEventListener('click', function () {
+    document.body.classList.toggle('dark')
+
+    const isDark = document.body.classList.contains('dark')
+
+    localStorage.setItem(
+      'darkMode',
+      isDark ? 'enabled' : 'disabled'
+    )
+
+    if (moonIcon)
+      moonIcon.style.display = isDark ? 'none' : 'block'
+
+    if (sunIcon)
+      sunIcon.style.display = isDark ? 'block' : 'none'
+
+    // 🔥 Update logo
+    updateLogo(isDark)
+  })
+}
   }
 })();
 
@@ -156,6 +203,14 @@ function checkAuth() {
   if (token) {
     location.href = 'index.html'
   }
+}
+
+function updateLogo(isDark) {
+  const logo = document.getElementById('logoImg')
+
+  if (!logo) return
+
+  logo.src = isDark ? 'white.png' : 'blue.png'
 }
 
 checkAuth()

@@ -1,736 +1,262 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Settings - Trip Planner</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link
-      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
-      rel="stylesheet"
-    />
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            fontFamily: {
-              sans: ['"Plus Jakarta Sans"', '"DM Sans"', "sans-serif"],
-              display: ['"Plus Jakarta Sans"', "sans-serif"],
-            },
-            colors: {
-              brand: {
-                50: "#ecfeff",
-                100: "#cffafe",
-                200: "#a5f3fc",
-                300: "#67e8f9",
-                400: "#22d3ee",
-                500: "#0ABFBC",
-                600: "#0891b2",
-                700: "#0e7490",
-              },
-            },
-            boxShadow: {
-              glass:
-                "0 8px 32px 0 rgba(10, 191, 188, 0.08), 0 2px 8px rgba(15, 23, 42, 0.04)",
-              "glass-lg":
-                "0 20px 60px -15px rgba(10, 191, 188, 0.18), 0 8px 20px rgba(15, 23, 42, 0.06)",
-              "inner-glow": "inset 0 1px 0 0 rgba(255, 255, 255, 0.7)",
-            },
-          },
-        },
-      };
-    </script>
-    <style>
-      html,
-      body {
-        font-family: "Plus Jakarta Sans", "DM Sans", sans-serif;
-      }
-      body {
-        background:
-          radial-gradient(
-            1200px 600px at 10% -10%,
-            rgba(10, 191, 188, 0.18),
-            transparent 60%
-          ),
-          radial-gradient(
-            900px 500px at 100% 0%,
-            rgba(99, 102, 241, 0.12),
-            transparent 60%
-          ),
-          radial-gradient(
-            800px 600px at 50% 110%,
-            rgba(236, 254, 255, 0.7),
-            transparent 60%
-          ),
-          linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
-        min-height: 100vh;
-      }
-      .glass {
-        background: rgba(255, 255, 255, 0.6);
-        backdrop-filter: blur(20px) saturate(180%);
-        -webkit-backdrop-filter: blur(20px) saturate(180%);
-        border: 1px solid rgba(255, 255, 255, 0.6);
-      }
-      .glass-strong {
-        background: rgba(255, 255, 255, 0.75);
-        backdrop-filter: blur(24px) saturate(180%);
-        -webkit-backdrop-filter: blur(24px) saturate(180%);
-        border: 1px solid rgba(255, 255, 255, 0.7);
-      }
-      .glass-nav {
-        background: rgba(255, 255, 255, 0.55);
-        backdrop-filter: blur(18px) saturate(180%);
-        -webkit-backdrop-filter: blur(18px) saturate(180%);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.5);
-      }
-      .gradient-text {
-        background: linear-gradient(135deg, #0ABFBC 0%, #0891b2 50%, #6366f1 100%);
-        -webkit-background-clip: text;
-        background-clip: text;
-        -webkit-text-fill-color: transparent;
-      }
-      .ring-soft:focus {
-        outline: none;
-        box-shadow: 0 0 0 4px rgba(10, 191, 188, 0.2);
-      }
-      .card-hover {
-        transition:
-          transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1),
-          box-shadow 0.35s ease;
-      }
-      .card-hover:hover {
-        transform: translateY(-2px);
-      }
-    </style>
-  </head>
-  <body class="text-slate-800 antialiased">
-    <!-- NAVBAR -->
-    <nav class="glass-nav sticky top-0 z-40">
-      <div
-        class="max-w-7xl mx-auto px-6 lg:px-10 py-4 flex items-center justify-between"
-      >
-        <a href="index.html" class="flex items-center gap-2.5 group">
-          <span
-            class="grid place-items-center w-9 h-9 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 shadow-glass group-hover:scale-105 transition"
-          >
-            <svg viewBox="0 0 36 36" fill="none" class="w-5 h-5">
-              <circle cx="18" cy="18" r="17" stroke="white" stroke-width="2" />
-              <ellipse
-                cx="18"
-                cy="18"
-                rx="8"
-                ry="17"
-                stroke="white"
-                stroke-width="1.5"
-              />
-              <line
-                x1="1"
-                y1="18"
-                x2="35"
-                y2="18"
-                stroke="white"
-                stroke-width="1.5"
-              />
-            </svg>
-          </span>
-          <span class="font-display font-bold text-xl text-slate-900">
-            Trip Planner
-          </span>
-        </a>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Settings - Trip Planner</title>
+  
+  <link rel="stylesheet" href="css/styles.css" /> 
+  
+  <style>
+    .settings-wrapper { padding: 120px 32px 60px; max-width: 800px; margin: 0 auto; min-height: 100vh; }
+    .settings-card { background: #fff; border-radius: 24px; box-shadow: 0 8px 32px rgba(0,0,0,0.07); padding: 40px; margin-bottom: 24px; transition: background 0.3s; }
+    body.dark .settings-card { background: var(--card-dark); }
+    .settings-header { display: flex; align-items: center; gap: 24px; margin-bottom: 32px; padding-bottom: 24px; border-bottom: 1px solid #f3f4f6; }
+    body.dark .settings-header { border-bottom-color: #374151; }
+    .avatar-circle { width: 80px; height: 80px; background: var(--teal); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-family: 'Bebas Neue', cursive; font-size: 2.5rem; }
+    .settings-title { font-family: 'Bebas Neue', cursive; font-size: 2.2rem; color: var(--navy); margin-bottom: 4px; }
+    body.dark .settings-title { color: #fff; }
+    .settings-row { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; border-bottom: 1px solid #f3f4f6; }
+    body.dark .settings-row { border-bottom-color: #374151; }
+    .settings-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .settings-label { font-weight: 700; color: var(--navy); font-size: 1.1rem; margin-bottom: 4px; }
+    body.dark .settings-label { color: #fff; }
+    .settings-value { color: #6b7280; font-size: 0.95rem; }
+    body.dark .settings-value { color: #9ca3af; }
+    .btn-danger { background: #ef4444; color: white; border: none; padding: 12px 24px; border-radius: 10px; font-weight: bold; font-family: 'DM Sans', sans-serif; cursor: pointer; width: 100%; transition: background 0.2s; }
+    .btn-danger:hover { background: #dc2626; }
+    .switch { position: relative; display: inline-block; width: 50px; height: 28px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
+    .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+    input:checked + .slider { background-color: var(--teal); }
+    input:checked + .slider:before { transform: translateX(22px); }
+    .btn-edit { background: transparent; color: var(--teal); border: 2px solid var(--teal); border-radius: 6px; font-family: 'DM Sans', sans-serif; font-weight: 600; cursor: pointer; transition: background 0.2s, color 0.2s; }
+    .btn-edit:hover { background: var(--teal); color: #fff; }
+    body.dark .btn-edit { color: #fff; }
+  </style>
+</head>
+<body class="result-page">
 
-        <ul
-          class="hidden md:flex items-center gap-8 text-sm font-medium text-slate-600"
-        >
-          <li>
-            <a
-              href="index.html"
-              class="hover:text-brand-600 transition relative"
-              >Home</a
-            >
-          </li>
-          <li>
-            <a
-              href="index.html#features"
-              class="hover:text-brand-600 transition"
-              >Features</a
-            >
-          </li>
-          <li>
-            <a
-              href="index.html#contact"
-              class="hover:text-brand-600 transition"
-              >Contact Us</a
-            >
-          </li>
-        </ul>
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <a href="index.html" class="navbar-logo">
+        <img src="blue.png" id="mainLogo" alt="Trip Planner Logo" style="height: 60px; border-radius: 60px;">
+        <span class="navbar-logo-text">Trip Planner</span>
+      </a>
 
-        <div class="flex items-center gap-3">
-          <button
-            onclick="logout()"
-            class="px-4 py-2 rounded-xl text-sm font-semibold text-slate-700 bg-white/70 border border-white/80 shadow-glass hover:bg-white hover:shadow-glass-lg hover:-translate-y-0.5 transition"
-          >
-            Sign Out
+      <ul class="navbar-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="index.html#features">Features</a></li>
+        <li><a href="index.html#contact">Contact Us</a></li>
+      </ul>
+
+      <div class="navbar-actions">
+        <button class="dark-toggle" id="darkToggle">
+          <svg id="moonIcon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: block;">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+          <svg id="sunIcon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          </svg>
+        </button>
+
+        <div class="user-menu">
+          <button class="user-menu-btn" onclick="location.href='settings.html'">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <span id="navUserName">My Account</span>
           </button>
         </div>
       </div>
-    </nav>
+    </div>
+  </nav>
 
-    <!-- SETTINGS PAGE -->
-    <main class="max-w-7xl mx-auto px-6 lg:px-10 py-10 lg:py-14">
-      <!-- HERO / PROFILE BANNER -->
-      <section
-        class="glass-strong rounded-3xl shadow-glass-lg overflow-hidden mb-8 relative"
-      >
-        <!-- decorative blobs -->
-        <div
-          class="pointer-events-none absolute -top-24 -right-24 w-72 h-72 rounded-full bg-gradient-to-br from-brand-300/40 to-indigo-300/30 blur-3xl"
-        ></div>
-        <div
-          class="pointer-events-none absolute -bottom-24 -left-24 w-72 h-72 rounded-full bg-gradient-to-tr from-cyan-200/40 to-fuchsia-200/30 blur-3xl"
-        ></div>
-
-        <div
-          class="relative p-8 lg:p-10 flex flex-col sm:flex-row items-start sm:items-center gap-6"
-        >
-          <div
-            id="settingsAvatar"
-            class="w-24 h-24 rounded-2xl grid place-items-center text-white font-bold text-4xl shadow-glass-lg ring-4 ring-white/70 bg-gradient-to-br from-brand-500 via-brand-600 to-indigo-500"
-          >
-            T
-          </div>
-          <div class="flex-1 min-w-0">
-            <p
-              class="text-xs font-semibold tracking-widest uppercase text-brand-700 mb-1"
-            >
-              Account Settings
-            </p>
-            <h1
-              id="settingsName"
-              class="font-display text-3xl lg:text-4xl font-extrabold text-slate-900 truncate"
-            >
-              Test User
-            </h1>
-            <p
-              id="settingsEmail"
-              class="text-slate-500 text-base mt-1 truncate"
-            >
-              test@test.com
-            </p>
-          </div>
-          <div
-            class="hidden md:flex items-center gap-2 px-4 py-2 rounded-full bg-white/70 border border-white/80 text-sm font-medium text-slate-600 shadow-glass"
-          >
-            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            Active
-          </div>
-        </div>
-      </section>
-
-      <!-- BENTO GRID -->
-      <section
-        class="grid grid-cols-1 md:grid-cols-6 lg:grid-cols-6 auto-rows-min gap-6"
-      >
-        <!-- ACCOUNT INFORMATION (large) -->
-        <article
-          class="glass rounded-3xl p-7 lg:p-8 shadow-glass card-hover md:col-span-6 lg:col-span-4"
-        >
-          <header class="flex items-center justify-between mb-6">
-            <div class="flex items-center gap-3">
-              <span
-                class="w-10 h-10 rounded-xl grid place-items-center bg-gradient-to-br from-brand-100 to-brand-200 text-brand-700"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                  <circle cx="12" cy="7" r="4" />
-                </svg>
-              </span>
-              <div>
-                <h2
-                  class="font-display text-lg font-bold text-slate-900 leading-tight"
-                >
-                  Account Information
-                </h2>
-                <p class="text-xs text-slate-500">
-                  Manage your personal details
-                </p>
-              </div>
-            </div>
-          </header>
-
-          <div class="space-y-3">
-            <!-- Full Name -->
-            <div
-              class="flex items-center justify-between gap-4 px-4 py-4 rounded-2xl bg-white/60 border border-white/80 hover:bg-white/80 transition"
-            >
-              <div class="min-w-0">
-                <p
-                  class="text-xs font-semibold uppercase tracking-wider text-slate-500"
-                >
-                  Full Name
-                </p>
-                <p
-                  id="displayName"
-                  class="text-base font-semibold text-slate-900 truncate mt-0.5"
-                >
-                  Test User
-                </p>
-              </div>
-              <button
-                onclick="editField('name')"
-                class="shrink-0 px-4 py-2 rounded-xl text-sm font-semibold text-brand-700 bg-brand-50 border border-brand-100 hover:bg-brand-100 hover:text-brand-800 hover:shadow-glass transition"
-              >
-                Edit
-              </button>
-            </div>
-
-            <!-- Email -->
-            <div
-              class="flex items-center justify-between gap-4 px-4 py-4 rounded-2xl bg-white/60 border border-white/80 hover:bg-white/80 transition"
-            >
-              <div class="min-w-0">
-                <p
-                  class="text-xs font-semibold uppercase tracking-wider text-slate-500"
-                >
-                  Email Address
-                </p>
-                <p
-                  id="displayEmail"
-                  class="text-base font-semibold text-slate-900 truncate mt-0.5"
-                >
-                  test@test.com
-                </p>
-              </div>
-              <button
-                onclick="editField('email')"
-                class="shrink-0 px-4 py-2 rounded-xl text-sm font-semibold text-brand-700 bg-brand-50 border border-brand-100 hover:bg-brand-100 hover:text-brand-800 hover:shadow-glass transition"
-              >
-                Edit
-              </button>
-            </div>
-
-            <!-- Member Since -->
-            <div
-              class="flex items-center justify-between gap-4 px-4 py-4 rounded-2xl bg-white/60 border border-white/80"
-            >
-              <div class="min-w-0">
-                <p
-                  class="text-xs font-semibold uppercase tracking-wider text-slate-500"
-                >
-                  Member Since
-                </p>
-                <p
-                  id="memberDate"
-                  class="text-base font-semibold text-slate-900 mt-0.5"
-                >
-                  March 2024
-                </p>
-              </div>
-              <span
-                class="shrink-0 px-3 py-1.5 rounded-full text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-100"
-                >Verified</span
-              >
-            </div>
-          </div>
-        </article>
-
-        <!-- MY TRIPS (small, tall) -->
-        <article
-          class="glass rounded-3xl p-7 shadow-glass card-hover md:col-span-3 lg:col-span-2 relative overflow-hidden"
-        >
-          <div
-            class="pointer-events-none absolute -top-10 -right-10 w-40 h-40 rounded-full bg-gradient-to-br from-pink-200/50 to-rose-200/40 blur-2xl"
-          ></div>
-          <header class="flex items-center gap-3 mb-5 relative">
-            <span
-              class="w-10 h-10 rounded-xl grid place-items-center bg-gradient-to-br from-rose-100 to-pink-200 text-rose-600"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                <circle cx="12" cy="10" r="3" />
-              </svg>
-            </span>
-            <div>
-              <h2 class="font-display text-lg font-bold text-slate-900 leading-tight">
-                My Trips
-              </h2>
-              <p class="text-xs text-slate-500">Your travel history</p>
-            </div>
-          </header>
-
-          <div class="relative">
-            <p
-              class="text-xs font-semibold uppercase tracking-wider text-slate-500"
-            >
-              Saved Trips
-            </p>
-            <p
-              id="savedTrips"
-              class="font-display text-5xl font-extrabold gradient-text mt-1 leading-none"
-            >
-              0
-            </p>
-            <button
-              onclick="location.href = '#'"
-              class="mt-6 w-full px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-brand-500 to-brand-600 shadow-glass hover:shadow-glass-lg hover:-translate-y-0.5 transition"
-            >
-              View All
-            </button>
-          </div>
-        </article>
-
-        <!-- PREFERENCES (medium) -->
-        <article
-          class="glass rounded-3xl p-7 lg:p-8 shadow-glass card-hover md:col-span-3 lg:col-span-3"
-        >
-          <header class="flex items-center gap-3 mb-5">
-            <span
-              class="w-10 h-10 rounded-xl grid place-items-center bg-gradient-to-br from-indigo-100 to-violet-200 text-indigo-600"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <circle cx="12" cy="12" r="3" />
-                <path
-                  d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"
-                />
-              </svg>
-            </span>
-            <div>
-              <h2
-                class="font-display text-lg font-bold text-slate-900 leading-tight"
-              >
-                Preferences
-              </h2>
-              <p class="text-xs text-slate-500">Customize your experience</p>
-            </div>
-          </header>
-
-          <div class="space-y-3">
-            <!-- Language -->
-            <div
-              class="flex items-center justify-between gap-4 px-4 py-4 rounded-2xl bg-white/60 border border-white/80 hover:bg-white/80 transition"
-            >
-              <div>
-                <p
-                  class="text-xs font-semibold uppercase tracking-wider text-slate-500"
-                >
-                  Language
-                </p>
-                <p class="text-base font-semibold text-slate-900 mt-0.5">
-                  English
-                </p>
-              </div>
-              <button
-                class="shrink-0 px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 bg-white/80 border border-slate-200 hover:bg-white hover:border-brand-200 hover:text-brand-700 transition"
-              >
-                Change
-              </button>
-            </div>
-
-            <!-- Notifications -->
-            <div
-              class="flex items-center justify-between gap-4 px-4 py-4 rounded-2xl bg-white/60 border border-white/80 hover:bg-white/80 transition"
-            >
-              <div>
-                <p
-                  class="text-xs font-semibold uppercase tracking-wider text-slate-500"
-                >
-                  Notifications
-                </p>
-                <p class="text-base font-semibold text-slate-900 mt-0.5">
-                  WhatsApp Updates
-                </p>
-              </div>
-              <!-- Toggle switch -->
-              <button
-                id="notifToggle"
-                role="switch"
-                aria-checked="true"
-                onclick="toggleNotif()"
-                class="shrink-0 relative inline-flex h-7 w-12 items-center rounded-full bg-gradient-to-r from-brand-500 to-brand-600 shadow-inner transition focus:outline-none focus:ring-4 focus:ring-brand-200"
-              >
-                <span
-                  id="notifKnob"
-                  class="inline-block h-5 w-5 transform rounded-full bg-white shadow translate-x-6 transition"
-                ></span>
-              </button>
-            </div>
-          </div>
-        </article>
-
-        <!-- ACCOUNT ACTIONS (danger) -->
-        <article
-          class="rounded-3xl p-7 lg:p-8 shadow-glass card-hover md:col-span-6 lg:col-span-3 relative overflow-hidden border border-rose-100"
-          style="
-            background: linear-gradient(
-                135deg,
-                rgba(255, 241, 242, 0.85) 0%,
-                rgba(255, 228, 230, 0.7) 100%
-              );
-            backdrop-filter: blur(20px) saturate(180%);
-          "
-        >
-          <div
-            class="pointer-events-none absolute -top-10 -right-10 w-44 h-44 rounded-full bg-rose-200/50 blur-3xl"
-          ></div>
-          <header class="flex items-center gap-3 mb-4 relative">
-            <span
-              class="w-10 h-10 rounded-xl grid place-items-center bg-gradient-to-br from-rose-100 to-rose-200 text-rose-600"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <path
-                  d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"
-                />
-                <line x1="12" y1="9" x2="12" y2="13" />
-                <line x1="12" y1="17" x2="12.01" y2="17" />
-              </svg>
-            </span>
-            <div>
-              <h2
-                class="font-display text-lg font-bold text-slate-900 leading-tight"
-              >
-                Account Actions
-              </h2>
-              <p class="text-xs text-rose-600/80">Be careful with these</p>
-            </div>
-          </header>
-
-          <p class="text-sm text-slate-600 leading-relaxed mb-5 relative">
-            Signing out will end your session and redirect you to the
-            homepage. You can sign back in anytime.
-          </p>
-
-          <button
-            onclick="logout()"
-            class="relative w-full sm:w-auto px-6 py-3 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-rose-500 to-rose-600 shadow-glass hover:shadow-glass-lg hover:-translate-y-0.5 hover:from-rose-600 hover:to-rose-700 transition flex items-center justify-center gap-2"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2.5"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-              <polyline points="16 17 21 12 16 7" />
-              <line x1="21" y1="12" x2="9" y2="12" />
-            </svg>
-            Sign Out
-          </button>
-        </article>
-      </section>
-    </main>
-
-    <!-- FOOTER -->
-    <footer class="mt-16 border-t border-white/60 bg-white/50 backdrop-blur">
-      <div class="max-w-7xl mx-auto px-6 lg:px-10 py-12">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-10">
-          <div>
-            <a href="index.html" class="flex items-center gap-2.5 mb-4">
-              <span
-                class="grid place-items-center w-9 h-9 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 shadow-glass"
-              >
-                <svg viewBox="0 0 36 36" fill="none" class="w-5 h-5">
-                  <circle
-                    cx="18"
-                    cy="18"
-                    r="17"
-                    stroke="white"
-                    stroke-width="2"
-                  />
-                  <ellipse
-                    cx="18"
-                    cy="18"
-                    rx="8"
-                    ry="17"
-                    stroke="white"
-                    stroke-width="1.5"
-                  />
-                  <line
-                    x1="1"
-                    y1="18"
-                    x2="35"
-                    y2="18"
-                    stroke="white"
-                    stroke-width="1.5"
-                  />
-                </svg>
-              </span>
-              <span class="font-display font-bold text-lg text-slate-900"
-                >Trip Planner</span
-              >
-            </a>
-            <p class="text-sm text-slate-500 leading-relaxed max-w-xs">
-              AI-powered personalized travel itineraries delivered straight to
-              your WhatsApp.
-            </p>
-          </div>
-          <div>
-            <h4 class="font-display font-bold text-slate-900 mb-4">
-              Quick Links
-            </h4>
-            <ul class="space-y-2.5 text-sm text-slate-500">
-              <li>
-                <a href="index.html" class="hover:text-brand-600 transition"
-                  >Home</a
-                >
-              </li>
-              <li>
-                <a
-                  href="index.html#features"
-                  class="hover:text-brand-600 transition"
-                  >Features</a
-                >
-              </li>
-              <li>
-                <a href="#" class="hover:text-brand-600 transition">About Us</a>
-              </li>
-            </ul>
-          </div>
-          <div>
-            <h4 class="font-display font-bold text-slate-900 mb-4">Support</h4>
-            <ul class="space-y-2.5 text-sm text-slate-500">
-              <li>
-                <a href="#" class="hover:text-brand-600 transition"
-                  >Help Center</a
-                >
-              </li>
-              <li>
-                <a href="#" class="hover:text-brand-600 transition"
-                  >Privacy Policy</a
-                >
-              </li>
-              <li>
-                <a href="#" class="hover:text-brand-600 transition"
-                  >Terms of Service</a
-                >
-              </li>
-            </ul>
-          </div>
-        </div>
-        <div
-          class="mt-10 pt-6 border-t border-slate-200/70 text-center text-xs text-slate-500"
-        >
-          © 2024 Trip Planner. All rights reserved.
+  <main class="settings-wrapper">
+    <div class="settings-card fade-in-up">
+      <div class="settings-header">
+        <div id="settingsAvatar" class="avatar-circle">J</div>
+        <div>
+          <h1 id="settingsName" class="settings-title">User</h1>
+          <p id="settingsEmail" class="settings-value">user@example.com</p>
         </div>
       </div>
-    </footer>
+      
+      <h2 class="settings-title" style="font-size: 1.6rem; margin-bottom: 20px;">Account Information</h2>
+      
+      <div class="settings-row">
+        <div>
+          <p class="settings-label">Full Name</p>
+          <p id="displayName" class="settings-value">User</p>
+        </div>
+        <button onclick="editField('name')" class="btn-edit" style="padding: 6px 16px;">Edit</button>
+      </div>
 
-    <script>
-      // Load user info from localStorage
-      function loadUserInfo() {
-        const userName = localStorage.getItem("userName") || "User";
-        const userEmail =
-          localStorage.getItem("userEmail") || "user@example.com";
-        const memberDate = localStorage.getItem("memberDate") || "March 2024";
+      <div class="settings-row">
+        <div>
+          <p class="settings-label">Email Address</p>
+          <p id="displayEmail" class="settings-value">user@example.com</p>
+        </div>
+        <button onclick="editField('email')" class="btn-edit" style="padding: 6px 16px;">Edit</button>
+      </div>
 
-        document.getElementById("settingsAvatar").textContent = userName
-          .charAt(0)
-          .toUpperCase();
-        document.getElementById("settingsName").textContent = userName;
-        document.getElementById("settingsEmail").textContent = userEmail;
-        document.getElementById("displayName").textContent = userName;
-        document.getElementById("displayEmail").textContent = userEmail;
-        document.getElementById("memberDate").textContent = memberDate;
+      <div class="settings-row">
+        <div>
+          <p class="settings-label">Member Since</p>
+          <p id="memberDate" class="settings-value">March 2024</p>
+        </div>
+        <span style="color: var(--teal); font-weight: bold; background: rgba(10,191,188,0.1); padding: 4px 12px; border-radius: 20px;">Verified</span>
+      </div>
+    </div>
+
+    <div class="settings-card fade-in-up fade-in-up-delay-1">
+      <h2 class="settings-title" style="font-size: 1.6rem; margin-bottom: 20px;">Preferences</h2>
+      
+      <div class="settings-row">
+        <div>
+          <p class="settings-label">Language</p>
+          <p class="settings-value">English</p>
+        </div>
+        <button class="btn-ghost">Change</button>
+      </div>
+
+      <div class="settings-row">
+        <div>
+          <p class="settings-label">WhatsApp Notifications</p>
+          <p class="settings-value">Receive itinerary updates</p>
+        </div>
+        <label class="switch">
+          <input type="checkbox" checked id="notifToggle" onclick="toggleNotif()">
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="settings-card fade-in-up fade-in-up-delay-2" style="border: 1px solid #fecdd3;">
+      <h2 class="settings-title" style="font-size: 1.6rem; margin-bottom: 10px; color: #e11d48;">Account Actions</h2>
+      <p class="settings-value" style="margin-bottom: 20px;">Signing out will end your session securely. You can sign back in anytime.</p>
+      <button onclick="logout()" class="btn-danger">Sign Out</button>
+    </div>
+  </main>
+
+  <script src="js/utils.js"></script>
+  
+  <script src="js/utils.js"></script>
+
+<script>
+  // =========================
+  // DARK MODE + LOGO SWITCH
+  // =========================
+
+  const darkToggle = document.getElementById('darkToggle')
+  const moonIcon = document.getElementById('moonIcon')
+  const sunIcon = document.getElementById('sunIcon')
+  const logo = document.getElementById('mainLogo')
+
+  function updateLogo(isDark) {
+    if (!logo) return
+    logo.src = isDark ? 'white.png' : 'blue.png'
+  }
+
+  // Load saved dark mode
+  const savedDarkMode = localStorage.getItem('darkMode')
+
+  if (savedDarkMode === 'enabled') {
+    document.body.classList.add('dark')
+
+    if (moonIcon) moonIcon.style.display = 'none'
+    if (sunIcon) sunIcon.style.display = 'block'
+
+    updateLogo(true)
+  } else {
+    updateLogo(false)
+  }
+
+  // Toggle dark mode
+  if (darkToggle) {
+    darkToggle.addEventListener('click', () => {
+      document.body.classList.toggle('dark')
+
+      const isDark = document.body.classList.contains('dark')
+
+      localStorage.setItem(
+        'darkMode',
+        isDark ? 'enabled' : 'disabled'
+      )
+
+      if (moonIcon)
+        moonIcon.style.display = isDark ? 'none' : 'block'
+
+      if (sunIcon)
+        sunIcon.style.display = isDark ? 'block' : 'none'
+
+      updateLogo(isDark)
+    })
+  }
+
+  // =========================
+  // USER INFO
+  // =========================
+
+  function loadUserInfo() {
+    const userName = localStorage.getItem("userName") || "User"
+    const userEmail = localStorage.getItem("userEmail") || "user@example.com"
+    const memberDate = localStorage.getItem("memberDate") || "March 2024"
+
+    document.getElementById("settingsAvatar").textContent =
+      userName.charAt(0).toUpperCase()
+
+    document.getElementById("settingsName").textContent = userName
+    document.getElementById("settingsEmail").textContent = userEmail
+    document.getElementById("displayName").textContent = userName
+    document.getElementById("displayEmail").textContent = userEmail
+    document.getElementById("memberDate").textContent = memberDate
+    document.getElementById("navUserName").textContent = userName
+  }
+
+  function editField(field) {
+    const value = prompt("Enter new " + field + ":")
+
+    if (value) {
+      if (field === "name") {
+        localStorage.setItem("userName", value)
+
+        document.getElementById("settingsName").textContent = value
+        document.getElementById("settingsAvatar").textContent =
+          value.charAt(0).toUpperCase()
+
+        document.getElementById("displayName").textContent = value
+        document.getElementById("navUserName").textContent = value
       }
 
-      function editField(field) {
-        const value = prompt("Enter new " + field + ":");
-        if (value) {
-          if (field === "name") {
-            localStorage.setItem("userName", value);
-            document.getElementById("settingsName").textContent = value;
-            document.getElementById("settingsAvatar").textContent = value
-              .charAt(0)
-              .toUpperCase();
-            document.getElementById("displayName").textContent = value;
-          } else if (field === "email") {
-            localStorage.setItem("userEmail", value);
-            document.getElementById("settingsEmail").textContent = value;
-            document.getElementById("displayEmail").textContent = value;
-          }
-        }
-      }
+      else if (field === "email") {
+        localStorage.setItem("userEmail", value)
 
-      function toggleNotif() {
-        const btn = document.getElementById("notifToggle");
-        const knob = document.getElementById("notifKnob");
-        const isOn = btn.getAttribute("aria-checked") === "true";
-        const next = !isOn;
-        btn.setAttribute("aria-checked", next);
-        if (next) {
-          btn.classList.remove("bg-slate-300");
-          btn.classList.add(
-            "bg-gradient-to-r",
-            "from-brand-500",
-            "to-brand-600"
-          );
-          knob.classList.remove("translate-x-1");
-          knob.classList.add("translate-x-6");
-        } else {
-          btn.classList.add("bg-slate-300");
-          btn.classList.remove(
-            "bg-gradient-to-r",
-            "from-brand-500",
-            "to-brand-600"
-          );
-          knob.classList.add("translate-x-1");
-          knob.classList.remove("translate-x-6");
-        }
+        document.getElementById("settingsEmail").textContent = value
+        document.getElementById("displayEmail").textContent = value
       }
+    }
+  }
 
-      function logout() {
-        localStorage.removeItem("isLoggedIn");
-        localStorage.removeItem("userName");
-        localStorage.removeItem("userEmail");
-        localStorage.removeItem("userId");
-        localStorage.removeItem("token");
-        location.href = "index.html";
-      }
+  function toggleNotif() {
+    console.log("Notifications toggled")
+  }
 
-      document.addEventListener("DOMContentLoaded", loadUserInfo);
-    </script>
-  </body>
+  function logout() {
+    localStorage.clear()
+    location.href = "index.html"
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    loadUserInfo()
+  })
+</script>
+</body>
 </html>

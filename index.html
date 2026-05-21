@@ -12,12 +12,12 @@
   <nav class="navbar">
     <div class="navbar-inner">
       <a href="index.html" class="navbar-logo">
-        <svg class="navbar-logo-icon" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="18" cy="18" r="17" stroke="#0ABFBC" stroke-width="2"/>
-          <ellipse cx="18" cy="18" rx="8" ry="17" stroke="#0ABFBC" stroke-width="1.5"/>
-          <line x1="1" y1="18" x2="35" y2="18" stroke="#0ABFBC" stroke-width="1.5"/>
-          <path d="M28 10 L32 6" stroke="#0ABFBC" stroke-width="2" stroke-linecap="round"/>
-        </svg>
+        <img
+          id="logoImg"
+          src="blue.png"
+          alt="Trip Planner Logo"
+          style="width: 60px; height: 60px; object-fit: contain;"
+        />
         <span class="navbar-logo-text">Trip Planner</span>
       </a>
 
@@ -33,7 +33,6 @@
           <svg id="sunIcon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
         </button>
 
-        <!-- User menu — shown when logged in -->
         <div class="user-menu hidden" id="userMenu">
           <button class="user-menu-btn" onclick="toggleDropdown()">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
@@ -46,7 +45,7 @@
               <span id="dropdownUserEmail">john@email.com</span>
             </div>
             <hr>
-            <a href="settings.html" onclick="">
+            <a href="settings.html">
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
               Settings
             </a>
@@ -61,7 +60,6 @@
           </div>
         </div>
 
-        <!-- Sign Up — shown when logged out -->
         <button class="btn-ghost" id="signUpBtn" onclick="location.href='login.html'">Sign Up</button>
       </div>
     </div>
@@ -100,15 +98,9 @@
     </div>
 
     <div class="hero-thumbnails">
-      <div class="hero-thumb">
-        <img src="daedsea.jpg" alt="Dead Sea" />
-      </div>
-      <div class="hero-thumb">
-        <img src="mountain-hiking.webp" alt="Mountain hiking" />
-      </div>
-      <div class="hero-thumb">
-        <img src="petra.jpg" alt="Petra" />
-      </div>
+      <div class="hero-thumb"><img src="daedsea.jpg" alt="Dead Sea" /></div>
+      <div class="hero-thumb"><img src="mountain-hiking.webp" alt="Mountain hiking" /></div>
+      <div class="hero-thumb"><img src="petra.jpg" alt="Petra" /></div>
     </div>
 
     <div class="hero-dots">
@@ -273,11 +265,7 @@
     <div class="footer-grid">
       <div class="footer-brand">
         <a href="index.html" class="navbar-logo" style="display:inline-flex; margin-bottom: 0;">
-          <svg style="width:32px;height:32px;" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="18" cy="18" r="17" stroke="#0ABFBC" stroke-width="2"/>
-            <ellipse cx="18" cy="18" rx="8" ry="17" stroke="#0ABFBC" stroke-width="1.5"/>
-            <line x1="1" y1="18" x2="35" y2="18" stroke="#0ABFBC" stroke-width="1.5"/>
-          </svg>
+          <img src="white.png" alt="Trip Planner Logo" style="height: 32px; border-radius: 6px; margin-right: 8px;">
           <span style="color:#fff; font-family:'DM Sans',sans-serif; font-weight:700; font-size:1.4rem;">Trip Planner</span>
         </a>
         <p>AI-powered personalized travel itineraries delivered straight to your WhatsApp.</p>

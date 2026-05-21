@@ -5,30 +5,56 @@
 const BASE_URL = "http://localhost:5000/api"
 
 // Dark mode - load state from localStorage on page load
-const moonIcon = document.getElementById('moonIcon');
-const sunIcon = document.getElementById('sunIcon');
+// =========================================
+// Dark Mode + Logo Switch
+// =========================================
 
-if (localStorage.getItem('darkMode') === 'enabled') {
-  document.body.classList.add('dark');
-  if (moonIcon) moonIcon.style.display = 'none';
-  if (sunIcon) sunIcon.style.display = 'block';
+const moonIcon = document.getElementById('moonIcon')
+const sunIcon = document.getElementById('sunIcon')
+
+function updateLogo(isDark) {
+  const logo = document.getElementById('logoImg')
+
+  if (!logo) return
+
+  logo.src = isDark ? 'white.png' : 'blue.png'
 }
 
-// Toggle dark mode on click
-const darkToggleBtn = document.getElementById('darkToggle');
+// Load saved mode
+if (localStorage.getItem('darkMode') === 'enabled') {
+  document.body.classList.add('dark')
+
+  if (moonIcon) moonIcon.style.display = 'none'
+  if (sunIcon) sunIcon.style.display = 'block'
+
+  updateLogo(true)
+} else {
+  updateLogo(false)
+}
+
+// Toggle dark mode
+const darkToggleBtn = document.getElementById('darkToggle')
+
 if (darkToggleBtn) {
   darkToggleBtn.addEventListener('click', function () {
-    document.body.classList.toggle('dark');
-    if (document.body.classList.contains('dark')) {
-      localStorage.setItem('darkMode', 'enabled');
-      if (moonIcon) moonIcon.style.display = 'none';
-      if (sunIcon) sunIcon.style.display = 'block';
-    } else {
-      localStorage.setItem('darkMode', 'disabled');
-      if (moonIcon) moonIcon.style.display = 'block';
-      if (sunIcon) sunIcon.style.display = 'none';
-    }
-  });
+    document.body.classList.toggle('dark')
+
+    const isDark = document.body.classList.contains('dark')
+
+    localStorage.setItem(
+      'darkMode',
+      isDark ? 'enabled' : 'disabled'
+    )
+
+    if (moonIcon)
+      moonIcon.style.display = isDark ? 'none' : 'block'
+
+    if (sunIcon)
+      sunIcon.style.display = isDark ? 'block' : 'none'
+
+    // 🔥 Update logo
+    updateLogo(isDark)
+  })
 }
 
 // Hero slide dots (use actual filenames present in project)
@@ -375,3 +401,10 @@ document.addEventListener('DOMContentLoaded', () => {
   setupReveal()
   updateNavbar()
 })
+function updateLogo(isDark) {
+  const logo = document.getElementById('logoImg')
+
+  if (!logo) return
+
+  logo.src = isDark ? 'white.png' : 'blue.png'
+}

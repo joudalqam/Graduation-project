@@ -10,46 +10,34 @@
 
   <div class="login-page">
 
-    <!-- Dark Mode Toggle -->
     <button class="dark-toggle floating-dark-toggle" id="darkToggle" aria-label="Toggle dark mode">
       <svg id="moonIcon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
       <svg id="sunIcon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
     </button>
 
-    <!-- ============ LEFT SIDE - FORM ============ -->
     <div class="login-left">
       <div class="login-blob-1"></div>
       <div class="login-blob-2"></div>
 
       <div class="login-form-wrap">
-        <!-- Logo -->
         <div class="login-logo">
-          <svg style="width:40px;height:40px;" viewBox="0 0 36 36" fill="none">
-            <circle cx="18" cy="18" r="17" stroke="#0ABFBC" stroke-width="2"/>
-            <ellipse cx="18" cy="18" rx="8" ry="17" stroke="#0ABFBC" stroke-width="1.5"/>
-            <line x1="1" y1="18" x2="35" y2="18" stroke="#0ABFBC" stroke-width="1.5"/>
-            <path d="M28 10 L32 6" stroke="#0ABFBC" stroke-width="2" stroke-linecap="round"/>
-          </svg>
+          <img src="blue.png" id="mainLogo" alt="Trip Planner Logo" style="height: 40px; border-radius: 8px;">
           <span>Trip Planner</span>
         </div>
 
-        <!-- Card -->
         <div class="login-card">
           <div class="login-heading" id="loginHeading">
             <span class="script">Welcome</span>
             <span class="display">BACK</span>
           </div>
 
-          <!-- Tabs -->
           <div class="tabs">
             <button class="tab-btn active" id="signinTab" onclick="switchTab('signin')">Sign In</button>
             <button class="tab-btn" id="signupTab" onclick="switchTab('signup')">Create Account</button>
           </div>
 
-          <!-- Form -->
           <form id="authForm" onsubmit="handleAuth(event)">
 
-            <!-- Sign Up Only Fields -->
             <div id="signupFields" class="hidden">
               <div class="input-group">
                 <label>Full Name</label>
@@ -60,7 +48,6 @@
               </div>
             </div>
 
-            <!-- Email -->
             <div class="input-group">
               <label>Email</label>
               <div class="input-with-icon">
@@ -69,7 +56,6 @@
               </div>
             </div>
 
-            <!-- Password -->
             <div class="input-group">
               <label>Password</label>
               <div class="input-with-icon">
@@ -81,7 +67,6 @@
               </div>
             </div>
 
-            <!-- Phone (Sign Up Only) -->
             <div id="phoneField" class="input-group hidden">
               <label>Phone Number (for WhatsApp)</label>
               <div class="input-with-icon">
@@ -93,15 +78,12 @@
             <button type="submit" class="btn-login" id="authSubmitBtn">Sign In</button>
           </form>
 
-          <!-- WhatsApp Note (sign up only) -->
           <p class="whatsapp-note hidden" id="whatsappNote">
             📱 Your itinerary will be sent to your WhatsApp number
           </p>
 
-          <!-- Divider -->
           <div class="divider">Or continue with</div>
 
-          <!-- Google -->
           <button type="button" class="btn-google" onclick="handleGoogleAuth()">
             <svg width="20" height="20" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -115,7 +97,6 @@
       </div>
     </div>
 
-    <!-- ============ RIGHT SIDE - IMAGE ============ -->
     <div class="login-right">
       <div class="login-right-bg"></div>
       <div class="login-right-blob"></div>
@@ -127,6 +108,7 @@
 
   </div>
 
+  <script src="js/utils.js"></script>
   <script src="js/login.js"></script>
 </body>
 </html>

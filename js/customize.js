@@ -2,28 +2,60 @@
 // AI Trip Planner - Customize Days Page
 // =========================================
 
-// Auto-apply dark mode from localStorage when page loads
-if (localStorage.getItem('darkMode') === 'enabled') {
-  document.body.classList.add('dark');
-  const moonIcon = document.getElementById('moonIcon');
-  const sunIcon = document.getElementById('sunIcon');
-  if (moonIcon) moonIcon.style.display = 'none';
-  if (sunIcon) sunIcon.style.display = 'block';
+// =========================================
+// Dark Mode + Logo Switch
+// =========================================
+
+const moonIcon = document.getElementById('moonIcon')
+const sunIcon = document.getElementById('sunIcon')
+
+function updateLogo(isDark) {
+  const logo = document.getElementById('logoImg')
+
+  if (!logo) return
+
+  logo.src = isDark ? 'white.png' : 'blue.png'
 }
 
-// Dark mode toggle
-document.getElementById('darkToggle').addEventListener('click', function () {
-  document.body.classList.toggle('dark');
-  if (document.body.classList.contains('dark')) {
-    localStorage.setItem('darkMode', 'enabled');
-    document.getElementById('moonIcon').style.display = 'none';
-    document.getElementById('sunIcon').style.display = 'block';
-  } else {
-    localStorage.setItem('darkMode', 'disabled');
-    document.getElementById('moonIcon').style.display = 'block';
-    document.getElementById('sunIcon').style.display = 'none';
-  }
-});
+// Load saved mode
+if (localStorage.getItem('darkMode') === 'enabled') {
+  document.body.classList.add('dark')
+
+  if (moonIcon) moonIcon.style.display = 'none'
+  if (sunIcon) sunIcon.style.display = 'block'
+
+  updateLogo(true)
+} else {
+  updateLogo(false)
+}
+
+// Toggle dark mode
+const darkToggleBtn = document.getElementById('darkToggle')
+
+if (darkToggleBtn) {
+  darkToggleBtn.addEventListener('click', function () {
+    document.body.classList.toggle('dark')
+
+    const isDark = document.body.classList.contains('dark')
+
+    localStorage.setItem(
+      'darkMode',
+      isDark ? 'enabled' : 'disabled'
+    )
+
+    if (moonIcon)
+      moonIcon.style.display = isDark ? 'none' : 'block'
+
+    if (sunIcon)
+      sunIcon.style.display = isDark ? 'block' : 'none'
+
+    updateLogo(isDark)
+  })
+}
+
+// =========================================
+// VIBE OPTIONS
+// =========================================
 
 const VIBE_OPTIONS = [
   {
@@ -47,153 +79,213 @@ const VIBE_OPTIONS = [
     image: 'daedsea.jpg',
     description: 'Peaceful and leisurely activities',
   },
-];
+]
 
-let tripData = null;
-let dayPreferences = [];
+let tripData = null
+let dayPreferences = []
+
+// =========================================
+// INIT
+// =========================================
 
 function init() {
-  const raw = sessionStorage.getItem('tripData');
+  const raw = sessionStorage.getItem('tripData')
+
   if (!raw) {
-    location.href = 'index.html';
-    return;
+    location.href = 'index.html'
+    return
   }
 
-  tripData = JSON.parse(raw);
-  const days = parseInt(tripData.days) || 3;
+  tripData = JSON.parse(raw)
+
+  const days = parseInt(tripData.days) || 3
 
   dayPreferences = Array.from({ length: days }, (_, i) => ({
     day: i + 1,
     vibe: null,
-  }));
+  }))
 
-  // Fill hero pills
-  const pills = document.getElementById('heroPills');
+  renderHero()
+  renderDays()
+}
+
+// =========================================
+// HERO
+// =========================================
+
+function renderHero() {
+  const pills = document.getElementById('heroPills')
+
   pills.innerHTML = `
-    <div class="hero-pill">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-      ${tripData.city}
-    </div>
-    <div class="hero-pill">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-      ${tripData.days} days
-    </div>
-    <div class="hero-pill">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-      $${tripData.budget}
-    </div>
-  `;
+    <div class="hero-pill">📍 ${tripData.city}</div>
+    <div class="hero-pill">📅 ${tripData.days} days</div>
+    <div class="hero-pill">💰 $${tripData.budget}</div>
+  `
+}
 
-  // Render day cards
-  const container = document.getElementById('daysContainer');
-  container.innerHTML = '';
+// =========================================
+// DAYS
+// =========================================
+
+function renderDays() {
+  const container = document.getElementById('daysContainer')
+
+  container.innerHTML = ''
 
   dayPreferences.forEach((pref) => {
-    const card = createDayCard(pref.day);
-    container.appendChild(card);
-  });
+    const card = createDayCard(pref.day)
+    container.appendChild(card)
+  })
 }
 
 function createDayCard(dayNum) {
-  const card = document.createElement('div');
-  card.className = 'day-card reveal';
-  card.id = `dayCard-${dayNum}`;
+  const card = document.createElement('div')
+
+  card.className = 'day-card reveal'
+  card.id = `dayCard-${dayNum}`
 
   card.innerHTML = `
     <div class="day-watermark">TRAVEL</div>
+
     <div class="day-number-circle">${dayNum}</div>
+
     <div class="day-card-inner">
+
       <div class="day-card-text">
         <span class="script">Choose your</span>
         <span class="display">DAY ${dayNum} VIBE</span>
-        <p>Select the type of experience you want for this day of your journey</p>
+
+        <p>
+          Select the type of experience you want for this day
+        </p>
+
         <div class="day-photo-wrap">
           <div class="teal-rect"></div>
-          <img src="mountain-hiking.webp" alt="Day ${dayNum}" id="dayPhoto-${dayNum}" />
+
+          <img
+            src="mountain-hiking.webp"
+            alt="Day ${dayNum}"
+            id="dayPhoto-${dayNum}"
+          />
         </div>
       </div>
+
       <div class="vibe-options">
+
         ${VIBE_OPTIONS.map(opt => `
-          <button class="vibe-option" id="vibe-${dayNum}-${opt.value}" onclick="selectVibe(${dayNum}, '${opt.value}')">
+          <button
+            class="vibe-option"
+            id="vibe-${dayNum}-${opt.value}"
+            onclick="selectVibe(${dayNum}, '${opt.value}')"
+          >
             <img src="${opt.image}" alt="${opt.label}" />
+
             <div class="vibe-info">
               <strong>${opt.emoji} ${opt.label}</strong>
               <span>${opt.description}</span>
             </div>
+
             <div class="check-circle">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              ✓
             </div>
           </button>
         `).join('')}
-      </div>
-    </div>
-  `;
 
-  return card;
+      </div>
+
+    </div>
+  `
+
+  return card
 }
 
+// =========================================
+// SELECT VIBE
+// =========================================
+
 function selectVibe(dayNum, vibe) {
-  // Update state
-  const pref = dayPreferences.find(p => p.day === dayNum);
-  if (pref) pref.vibe = vibe;
+  const pref = dayPreferences.find(p => p.day === dayNum)
 
-  // Update UI - deselect all for this day
+  if (pref) pref.vibe = vibe
+
+  // remove old selection
   VIBE_OPTIONS.forEach(opt => {
-    const btn = document.getElementById(`vibe-${dayNum}-${opt.value}`);
-    if (btn) btn.classList.remove('selected');
-  });
+    const btn = document.getElementById(`vibe-${dayNum}-${opt.value}`)
 
-  // Select clicked
-  const selected = document.getElementById(`vibe-${dayNum}-${vibe}`);
-  if (selected) selected.classList.add('selected');
+    if (btn) btn.classList.remove('selected')
+  })
 
-  // Update day photo
-  const photo = document.getElementById(`dayPhoto-${dayNum}`);
-  if (photo) {
-    const opt = VIBE_OPTIONS.find(o => o.value === vibe);
-    if (opt) photo.src = opt.image;
+  // add selected
+  const selected = document.getElementById(`vibe-${dayNum}-${vibe}`)
+
+  if (selected) selected.classList.add('selected')
+
+  // update image
+  const photo = document.getElementById(`dayPhoto-${dayNum}`)
+
+  const opt = VIBE_OPTIONS.find(o => o.value === vibe)
+
+  if (photo && opt) {
+    photo.src = opt.image
   }
 }
 
-function handleGenerate() {
-  console.log('[customize] handleGenerate fired', dayPreferences);
+// =========================================
+// GENERATE
+// =========================================
 
+function handleGenerate() {
   dayPreferences.forEach(pref => {
-    if (!pref.vibe) pref.vibe = 'adventure'
+    if (!pref.vibe) {
+      pref.vibe = 'adventure'
+    }
   })
 
-  sessionStorage.setItem('dayPreferences', JSON.stringify(dayPreferences))
+  sessionStorage.setItem(
+    'dayPreferences',
+    JSON.stringify(dayPreferences)
+  )
 
-  showLoading('AI is generating your trip...', 'Creating the perfect day-by-day itinerary for you')
-
-  setTimeout(() => {
-    location.href = 'result.html'
-  }, 2500)
+  location.href = 'result.html'
 }
+
+// =========================================
+// SIGN OUT
+// =========================================
 
 function handleSignOut() {
-  localStorage.removeItem('isLoggedIn');
-  location.href = 'index.html';
+  localStorage.clear()
+  location.href = 'index.html'
 }
 
-// Scroll reveal
+// =========================================
+// REVEAL ANIMATION
+// =========================================
+
 function setupReveal() {
-  const els = document.querySelectorAll('.reveal');
+  const els = document.querySelectorAll('.reveal')
+
   const observer = new IntersectionObserver(
     (entries) => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
-          entry.target.classList.add('visible');
-          observer.unobserve(entry.target);
+          entry.target.classList.add('visible')
+          observer.unobserve(entry.target)
         }
-      });
+      })
     },
     { threshold: 0.08 }
-  );
-  els.forEach((el) => observer.observe(el));
+  )
+
+  els.forEach((el) => observer.observe(el))
 }
 
+// =========================================
+// START
+// =========================================
+
 document.addEventListener('DOMContentLoaded', () => {
-  init();
-  setTimeout(setupReveal, 100);
-});
+  init()
+
+  setTimeout(setupReveal, 100)
+})

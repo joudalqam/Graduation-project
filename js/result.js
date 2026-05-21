@@ -1,110 +1,94 @@
 // =========================================
-// AI Trip Planner - Trip Result Page
-// All data comes dynamically from the backend
-// (Google Places API + ranking + itinerary services).
-// No mock / hardcoded activity data is used.
+// result.js  — Trip Result Page
 // =========================================
 
 const API_BASE_URL = "http://localhost:5000";
 
 // ---------- Dark mode ----------
-(function initDarkMode() {
-  if (localStorage.getItem("darkMode") === "enabled") {
-    document.body.classList.add("dark");
-    const moonIcon = document.getElementById("moonIcon");
-    const sunIcon = document.getElementById("sunIcon");
-    if (moonIcon) moonIcon.style.display = "none";
-    if (sunIcon) sunIcon.style.display = "block";
-  }
-})();
+const moonIcon = document.getElementById('moonIcon');
+const sunIcon  = document.getElementById('sunIcon');
 
-document.getElementById("darkToggle").addEventListener("click", function () {
-  const isDark = document.body.classList.toggle("dark");
-  const moonIcon = document.getElementById("moonIcon");
-  const sunIcon = document.getElementById("sunIcon");
-  if (isDark) {
-    localStorage.setItem("darkMode", "enabled");
-    if (moonIcon) moonIcon.style.display = "none";
-    if (sunIcon) sunIcon.style.display = "block";
-  } else {
-    localStorage.setItem("darkMode", "disabled");
-    if (moonIcon) moonIcon.style.display = "block";
-    if (sunIcon) sunIcon.style.display = "none";
-  }
-});
+function updateLogo(isDark) {
+  const logo = document.getElementById('logoImg');
+  if (!logo) return;
+  logo.src = isDark ? 'white.png' : 'blue.png';
+}
+
+if (localStorage.getItem('darkMode') === 'enabled') {
+  document.body.classList.add('dark');
+  if (moonIcon) moonIcon.style.display = 'none';
+  if (sunIcon)  sunIcon.style.display  = 'block';
+  updateLogo(true);
+} else {
+  updateLogo(false);
+}
+
+const darkToggleBtn = document.getElementById('darkToggle');
+if (darkToggleBtn) {
+  darkToggleBtn.addEventListener('click', function () {
+    document.body.classList.toggle('dark');
+    const isDark = document.body.classList.contains('dark');
+    localStorage.setItem('darkMode', isDark ? 'enabled' : 'disabled');
+    if (moonIcon) moonIcon.style.display = isDark ? 'none' : 'block';
+    if (sunIcon)  sunIcon.style.display  = isDark ? 'block' : 'none';
+    updateLogo(isDark);
+  });
+}
 
 // ---------- State ----------
-let tripData = null;
+let tripData       = null;
 let dayPreferences = [];
-let itineraryData = null;     // backend itinerary response
-let flatPlaces = [];          // flattened ordered list of every activity place
-let map = null;
-let infoWindow = null;
-let markers = [];             // google.maps.Marker[] aligned with flatPlaces
-let routeLines = [];          // one polyline per day
+let itineraryData  = null;
+let flatPlaces     = [];
+let map            = null;
+let infoWindow     = null;
+let markers        = [];
+let routeLines     = [];
 
-// ---------- Helpers: map frontend prefs -> backend preferences ----------
-
-// travelStyle (adventure | food | relaxing) -> backend tripType
+// ---------- Helpers ----------
 function mapTravelStyleToTripType(style) {
   switch ((style || "").toLowerCase()) {
-    case "adventure":
-      return "adventure";
-    case "food":
-      return "cultural";
-    case "relaxing":
-      return "relaxation";
-    default:
-      return null;
+    case "adventure": return "adventure";
+    case "food":      return "cultural";
+    case "relaxing":  return "relaxation";
+    default:          return null;
   }
 }
 
-// Convert raw budget number entered by user into low|medium|high
-// using per-person-per-day spend.
 function mapBudgetToCategory(totalBudget, days, people) {
   const total = Number(totalBudget);
-  const d = Math.max(Number(days) || 1, 1);
+  const d = Math.max(Number(days)   || 1, 1);
   const p = Math.max(Number(people) || 1, 1);
-
   if (Number.isNaN(total) || total <= 0) return null;
-
   const perPersonPerDay = total / d / p;
-
-  if (perPersonPerDay < 50) return "low";
+  if (perPersonPerDay < 50)  return "low";
   if (perPersonPerDay <= 150) return "medium";
   return "high";
 }
 
-// Use the dominant vibe across days as the trip-level tripType.
 function pickDominantTripType(prefs, fallback) {
   if (!Array.isArray(prefs) || prefs.length === 0) return fallback;
   const counts = {};
-  prefs.forEach((p) => {
-    if (!p?.vibe) return;
-    counts[p.vibe] = (counts[p.vibe] || 0) + 1;
-  });
+  prefs.forEach((p) => { if (p?.vibe) counts[p.vibe] = (counts[p.vibe] || 0) + 1; });
   const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
   return top ? mapTravelStyleToTripType(top[0]) : fallback;
 }
 
 // ---------- Init ----------
 function init() {
-  const rawTrip = sessionStorage.getItem("tripData");
+  const rawTrip  = sessionStorage.getItem("tripData");
   const rawPrefs = sessionStorage.getItem("dayPreferences");
 
-  if (!rawTrip) {
-    location.href = "index.html";
-    return;
-  }
+  if (!rawTrip) { location.href = "index.html"; return; }
 
-  tripData = JSON.parse(rawTrip);
+  tripData       = JSON.parse(rawTrip);
   dayPreferences = rawPrefs ? JSON.parse(rawPrefs) : [];
 
   const days = parseInt(tripData.days) || 3;
 
   if (!dayPreferences.length) {
     dayPreferences = Array.from({ length: days }, (_, i) => ({
-      day: i + 1,
+      day:  i + 1,
       vibe: tripData.travelStyle || "adventure",
     }));
   }
@@ -139,8 +123,7 @@ function renderHeroPills() {
 
 function renderTripSummary() {
   const vibeStyle = tripData.travelStyle
-    ? tripData.travelStyle.charAt(0).toUpperCase() +
-      tripData.travelStyle.slice(1)
+    ? tripData.travelStyle.charAt(0).toUpperCase() + tripData.travelStyle.slice(1)
     : "Adventure";
 
   document.getElementById("tripSummary").innerHTML = `
@@ -169,8 +152,7 @@ function renderTripSummary() {
 
 // ---------- Itinerary fetch ----------
 function renderItineraryLoading() {
-  const section = document.getElementById("itinerarySection");
-  section.innerHTML = `
+  document.getElementById("itinerarySection").innerHTML = `
     <div class="day-plan-card">
       <div class="day-plan-header">
         <div class="day-circle">…</div>
@@ -187,8 +169,7 @@ function renderItineraryLoading() {
 }
 
 function renderItineraryError(message) {
-  const section = document.getElementById("itinerarySection");
-  section.innerHTML = `
+  document.getElementById("itinerarySection").innerHTML = `
     <div class="day-plan-card">
       <div class="day-plan-header">
         <div class="day-circle">!</div>
@@ -204,100 +185,60 @@ function renderItineraryError(message) {
 
 async function fetchAndRenderItinerary() {
   try {
-    const tripType =
-      pickDominantTripType(dayPreferences, mapTravelStyleToTripType(tripData.travelStyle)) ||
-      undefined;
-
-    const budget = mapBudgetToCategory(
-      tripData.budget,
-      tripData.days,
-      tripData.people,
-    );
+    const tripType = pickDominantTripType(dayPreferences, mapTravelStyleToTripType(tripData.travelStyle)) || undefined;
+    const budget   = mapBudgetToCategory(tripData.budget, tripData.days, tripData.people);
 
     const payload = {
-      destination: tripData.city,
-      tripDuration: parseInt(tripData.days) || 1,
-      travelers: parseInt(tripData.people) || 1,
+      destination:  tripData.city,
+      tripDuration: parseInt(tripData.days)   || 1,
+      travelers:    parseInt(tripData.people) || 1,
     };
-
-    if (budget) payload.budget = budget;
+    if (budget)   payload.budget   = budget;
     if (tripType) payload.tripType = tripType;
 
     console.log("[result] POST /api/itinerary/generate payload:", payload);
 
     const response = await fetch(`${API_BASE_URL}/api/itinerary/generate`, {
-      method: "POST",
+      method:  "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      body:    JSON.stringify(payload),
     });
 
     const data = await response.json();
-    console.log(
-      "[result] backend response:",
-      response.status,
-      "candidateCounts=",
-      data?.summary?.candidateCounts,
-      "totalActivities=",
-      data?.summary?.totalActivities,
-      "raw=",
-      data
-    );
+    console.log("[result] backend response:", response.status, data);
 
     if (!response.ok || !data.success || !Array.isArray(data.itinerary)) {
-      const msg = data?.message || `Request failed (${response.status})`;
-      renderItineraryError(msg);
+      renderItineraryError(data?.message || `Request failed (${response.status})`);
       return;
     }
 
     itineraryData = data.itinerary;
-    flatPlaces = flattenItineraryPlaces(itineraryData);
+    flatPlaces    = flattenItineraryPlaces(itineraryData);
 
     renderItinerary();
     renderMapFromItinerary();
   } catch (error) {
     console.error("Error fetching itinerary:", error);
-    renderItineraryError(
-      "Could not reach the server. Make sure the backend is running on " +
-        API_BASE_URL +
-        ".",
-    );
+    renderItineraryError(`Could not reach the server. Make sure the backend is running on ${API_BASE_URL}.`);
   }
 }
 
-// Walk the days/activities and produce an ordered list of
-// { dayIndex, activityIndex, day, time, activityType, title, place, globalIndex }.
 function flattenItineraryPlaces(itinerary) {
   const flat = [];
   let globalIndex = 0;
 
   itinerary.forEach((day, dayIndex) => {
     day.activities.forEach((activity, activityIndex) => {
-      if (
-        !activity?.place ||
-        activity.place.location?.lat == null ||
-        activity.place.location?.lng == null
-      ) {
-        return;
-      }
-
-      flat.push({
-        dayIndex,
-        activityIndex,
-        day: day.day,
-        time: activity.time,
-        activityType: activity.activityType,
-        title: activity.title,
-        place: activity.place,
-        globalIndex,
-      });
-      globalIndex += 1;
+      if (!activity?.place || activity.place.location?.lat == null || activity.place.location?.lng == null) return;
+      flat.push({ dayIndex, activityIndex, day: day.day, time: activity.time, activityType: activity.activityType, title: activity.title, place: activity.place, globalIndex });
+      globalIndex++;
     });
   });
 
   return flat;
 }
 
-// ---------- Render itinerary timeline ----------
+// ---------- Render itinerary ----------
 function priceSymbol(priceLevel) {
   if (priceLevel === null || priceLevel === undefined) return "—";
   if (priceLevel === 0) return "Free";
@@ -305,20 +246,18 @@ function priceSymbol(priceLevel) {
 }
 
 function ratingHtml(rating, totalRatings) {
-  const r = rating ?? "N/A";
-  const c = totalRatings ?? 0;
   return `
     <div class="activity-rating">
       <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-      ${r}${c ? ` (${c})` : ""}
+      ${rating ?? "N/A"}${totalRatings ? ` (${totalRatings})` : ""}
     </div>
   `;
 }
 
 function activityTypeLabel(activityType) {
-  if (activityType === "restaurant") return "Restaurant";
-  if (activityType === "cafe") return "Café";
-  if (activityType === "tourist_attraction") return "Attraction";
+  if (activityType === "restaurant")        return "Restaurant";
+  if (activityType === "cafe")              return "Café";
+  if (activityType === "tourist_attraction")return "Attraction";
   return activityType || "Place";
 }
 
@@ -332,59 +271,19 @@ function renderItinerary() {
   }
 
   itineraryData.forEach((day, dayIndex) => {
-    const pref = dayPreferences[dayIndex];
-    const vibe = pref?.vibe || tripData.travelStyle || "adventure";
-    const dayBadge = vibe.charAt(0).toUpperCase() + vibe.slice(1);
+    const pref  = dayPreferences[dayIndex];
+    const vibe  = pref?.vibe || tripData.travelStyle || "adventure";
+    const badge = vibe.charAt(0).toUpperCase() + vibe.slice(1);
 
     const card = document.createElement("div");
     card.className = "day-plan-card reveal";
     card.style.animationDelay = `${dayIndex * 0.15}s`;
 
-    const itemsHtml = day.activities
-      .map((activity) => {
-        const place = activity.place;
-
-        if (!place) {
-          return `
-            <div class="timeline-item">
-              <div class="timeline-dot"></div>
-              <div class="timeline-item-inner">
-                <div class="activity-meta">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                  <span class="activity-time">${activity.time}</span>
-                  <span class="activity-type">${activityTypeLabel(activity.activityType)}</span>
-                </div>
-                <div class="activity-name">No suitable place found</div>
-              </div>
-            </div>
-          `;
-        }
-
-        const flat = flatPlaces.find(
-          (f) =>
-            f.dayIndex === dayIndex &&
-            f.place.id === place.id &&
-            f.time === activity.time,
-        );
-        const globalIndex = flat ? flat.globalIndex : -1;
-
-        const score =
-          place.rankingScore !== null && place.rankingScore !== undefined
-            ? `<span class="activity-price" title="Ranking score">Score ${place.rankingScore}</span>`
-            : "";
-
-        const reasons =
-          Array.isArray(place.rankingReasons) && place.rankingReasons.length
-            ? `<div class="activity-distance" style="margin-top:6px;font-size:0.85rem;color:#64748B;">${place.rankingReasons.slice(0, 2).join(" · ")}</div>`
-            : "";
-
-        const distance =
-          place.distanceKm !== null && place.distanceKm !== undefined
-            ? `<div class="activity-distance" style="margin-top:6px;font-size:0.9rem;color:#0ABFBC;font-weight:600;">~${place.distanceKm} km from anchor</div>`
-            : "";
-
+    const itemsHtml = day.activities.map((activity) => {
+      const place = activity.place;
+      if (!place) {
         return `
-          <div class="timeline-item" data-global-index="${globalIndex}" style="cursor:pointer">
+          <div class="timeline-item">
             <div class="timeline-dot"></div>
             <div class="timeline-item-inner">
               <div class="activity-meta">
@@ -392,38 +291,60 @@ function renderItinerary() {
                 <span class="activity-time">${activity.time}</span>
                 <span class="activity-type">${activityTypeLabel(activity.activityType)}</span>
               </div>
-              <div class="activity-name">${place.name}</div>
-              <div class="activity-stats">
-                ${ratingHtml(place.rating, place.totalRatings)}
-                <span class="activity-price">${priceSymbol(place.priceLevel)}</span>
-                ${score}
-              </div>
-              ${distance}
-              ${reasons}
+              <div class="activity-name">No suitable place found</div>
             </div>
           </div>
         `;
-      })
-      .join("");
+      }
+
+      const flat = flatPlaces.find(f => f.dayIndex === dayIndex && f.place.id === place.id && f.time === activity.time);
+      const globalIndex = flat ? flat.globalIndex : -1;
+
+      const score   = place.rankingScore != null ? `<span class="activity-price" title="Ranking score">Score ${place.rankingScore}</span>` : "";
+      const reasons = Array.isArray(place.rankingReasons) && place.rankingReasons.length
+        ? `<div class="activity-distance" style="margin-top:6px;font-size:0.85rem;color:#64748B;">${place.rankingReasons.slice(0, 2).join(" · ")}</div>`
+        : "";
+      const distance = place.distanceKm != null
+        ? `<div class="activity-distance" style="margin-top:6px;font-size:0.9rem;color:#0ABFBC;font-weight:600;">~${place.distanceKm} km from anchor</div>`
+        : "";
+
+      return `
+        <div class="timeline-item" data-global-index="${globalIndex}" style="cursor:pointer">
+          <div class="timeline-dot"></div>
+          <div class="timeline-item-inner">
+            <div class="activity-meta">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <span class="activity-time">${activity.time}</span>
+              <span class="activity-type">${activityTypeLabel(activity.activityType)}</span>
+            </div>
+            <div class="activity-name">${place.name}</div>
+            <div class="activity-stats">
+              ${ratingHtml(place.rating, place.totalRatings)}
+              <span class="activity-price">${priceSymbol(place.priceLevel)}</span>
+              ${score}
+            </div>
+            ${distance}
+            ${reasons}
+          </div>
+        </div>
+      `;
+    }).join("");
 
     card.innerHTML = `
       <div class="day-plan-header">
         <div class="day-circle">${day.day}</div>
         <div>
           <div class="day-plan-title">DAY ${day.day} — ${day.dayTitle || tripData.city}</div>
-          <span class="day-badge">${dayBadge}</span>
+          <span class="day-badge">${badge}</span>
         </div>
       </div>
-      <div class="timeline">
-        ${itemsHtml}
-      </div>
+      <div class="timeline">${itemsHtml}</div>
     `;
 
     section.appendChild(card);
   });
 
-  // Wire up timeline → map clicks
-  section.querySelectorAll(".timeline-item[data-global-index]").forEach((el) => {
+  section.querySelectorAll(".timeline-item[data-global-index]").forEach(el => {
     el.addEventListener("click", () => {
       const idx = parseInt(el.getAttribute("data-global-index"), 10);
       if (!Number.isNaN(idx) && idx >= 0) {
@@ -437,56 +358,31 @@ function renderItinerary() {
 }
 
 function highlightTimelineItem(globalIndex) {
-  document
-    .querySelectorAll(".timeline-item-inner")
-    .forEach((el) => (el.style.borderColor = ""));
-
-  const item = document.querySelector(
-    `.timeline-item[data-global-index="${globalIndex}"] .timeline-item-inner`,
-  );
+  document.querySelectorAll(".timeline-item-inner").forEach(el => el.style.borderColor = "");
+  const item = document.querySelector(`.timeline-item[data-global-index="${globalIndex}"] .timeline-item-inner`);
   if (item) item.style.borderColor = "#0ABFBC";
 }
 
 // ---------- Google Maps ----------
 async function initMap() {
-  const jordanCenter = { lat: 31.95, lng: 35.93 }; // Amman fallback
-
   map = new google.maps.Map(document.getElementById("map"), {
-    center: jordanCenter,
-    zoom: 7,
+    center: { lat: 31.95, lng: 35.93 },
+    zoom:   7,
   });
-
   infoWindow = new google.maps.InfoWindow();
-
-  // If itinerary already arrived before the map was ready, render now.
-  if (itineraryData) {
-    renderMapFromItinerary();
-  }
+  if (itineraryData) renderMapFromItinerary();
 }
 
 function clearMap() {
-  markers.forEach((marker) => marker.setMap(null));
-  markers = [];
-
-  routeLines.forEach((line) => line.setMap(null));
-  routeLines = [];
+  markers.forEach(m => m.setMap(null));    markers   = [];
+  routeLines.forEach(l => l.setMap(null)); routeLines = [];
 }
 
-const DAY_COLORS = [
-  "#0ABFBC",
-  "#F59E0B",
-  "#EF4444",
-  "#8B5CF6",
-  "#10B981",
-  "#3B82F6",
-  "#EC4899",
-];
+const DAY_COLORS = ["#0ABFBC","#F59E0B","#EF4444","#8B5CF6","#10B981","#3B82F6","#EC4899"];
 
 function renderMapFromItinerary() {
   if (!map || !itineraryData) return;
-
   clearMap();
-
   if (flatPlaces.length === 0) return;
 
   const bounds = new google.maps.LatLngBounds();
@@ -496,21 +392,13 @@ function renderMapFromItinerary() {
     const position = { lat: place.location.lat, lng: place.location.lng };
 
     const marker = new google.maps.Marker({
-      position,
-      map,
+      position, map,
       title: `Day ${day} — ${place.name}`,
-      label: {
-        text: String(globalIndex + 1),
-        color: "#fff",
-        fontWeight: "bold",
-      },
+      label: { text: String(globalIndex + 1), color: "#fff", fontWeight: "bold" },
       icon: {
-        path: google.maps.SymbolPath.CIRCLE,
-        scale: 12,
-        fillColor: DAY_COLORS[dayIndex % DAY_COLORS.length],
-        fillOpacity: 1,
-        strokeColor: "#fff",
-        strokeWeight: 2,
+        path: google.maps.SymbolPath.CIRCLE, scale: 12,
+        fillColor: DAY_COLORS[dayIndex % DAY_COLORS.length], fillOpacity: 1,
+        strokeColor: "#fff", strokeWeight: 2,
       },
     });
 
@@ -523,26 +411,19 @@ function renderMapFromItinerary() {
     bounds.extend(position);
   });
 
-  // Per-day route polylines
   const placesByDay = new Map();
-  flatPlaces.forEach((entry) => {
+  flatPlaces.forEach(entry => {
     if (!placesByDay.has(entry.dayIndex)) placesByDay.set(entry.dayIndex, []);
     placesByDay.get(entry.dayIndex).push(entry);
   });
 
   placesByDay.forEach((entries, dayIndex) => {
     if (entries.length < 2) return;
-    const path = entries.map((e) => ({
-      lat: e.place.location.lat,
-      lng: e.place.location.lng,
-    }));
+    const path = entries.map(e => ({ lat: e.place.location.lat, lng: e.place.location.lng }));
     const line = new google.maps.Polyline({
-      path,
-      geodesic: true,
+      path, geodesic: true,
       strokeColor: DAY_COLORS[dayIndex % DAY_COLORS.length],
-      strokeOpacity: 0.85,
-      strokeWeight: 3,
-      map,
+      strokeOpacity: 0.85, strokeWeight: 3, map,
     });
     routeLines.push(line);
   });
@@ -551,21 +432,16 @@ function renderMapFromItinerary() {
 }
 
 function openInfoWindowFor(globalIndex) {
-  const entry = flatPlaces[globalIndex];
+  const entry  = flatPlaces[globalIndex];
   const marker = markers[globalIndex];
   if (!entry || !marker) return;
 
   const { place, day, time, activityType } = entry;
 
-  const reasons =
-    Array.isArray(place.rankingReasons) && place.rankingReasons.length
-      ? `<ul style="margin:6px 0 0 18px;padding:0;font-size:0.85rem;color:#475569;">
-          ${place.rankingReasons
-            .slice(0, 3)
-            .map((r) => `<li>${r}</li>`)
-            .join("")}
-        </ul>`
-      : "";
+  const reasons = Array.isArray(place.rankingReasons) && place.rankingReasons.length
+    ? `<ul style="margin:6px 0 0 18px;padding:0;font-size:0.85rem;color:#475569;">
+        ${place.rankingReasons.slice(0, 3).map(r => `<li>${r}</li>`).join("")}
+      </ul>` : "";
 
   infoWindow.setContent(`
     <div style="max-width:260px;font-family:'DM Sans',sans-serif">
@@ -578,11 +454,7 @@ function openInfoWindowFor(globalIndex) {
         ⭐ ${place.rating ?? "N/A"} (${place.totalRatings ?? 0}) · ${priceSymbol(place.priceLevel)}
         ${place.rankingScore != null ? ` · Score ${place.rankingScore}` : ""}
       </p>
-      ${
-        place.distanceKm != null
-          ? `<p style="margin:0;color:#0ABFBC;font-weight:600;">~${place.distanceKm} km from anchor</p>`
-          : ""
-      }
+      ${place.distanceKm != null ? `<p style="margin:0;color:#0ABFBC;font-weight:600;">~${place.distanceKm} km from anchor</p>` : ""}
       ${reasons}
     </div>
   `);
@@ -591,47 +463,80 @@ function openInfoWindowFor(globalIndex) {
 
 function focusPlaceOnMap(globalIndex) {
   const marker = markers[globalIndex];
-  const entry = flatPlaces[globalIndex];
+  const entry  = flatPlaces[globalIndex];
   if (!marker || !entry) return;
-
   map.panTo(marker.getPosition());
   if (map.getZoom() < 13) map.setZoom(14);
   openInfoWindowFor(globalIndex);
 }
 
-// ---------- WhatsApp / Save / Sign out ----------
-function sendToWhatsApp() {
-  let message = `🌍 *AI Trip Plan for ${tripData.city}*\n`;
-  message += `📅 ${tripData.days} days | 👥 ${tripData.people} people | 💰 $${tripData.budget}\n\n`;
-
-  if (Array.isArray(itineraryData)) {
-    itineraryData.forEach((day) => {
-      message += `*Day ${day.day}:*\n`;
-      day.activities.forEach((act) => {
-        if (!act.place) return;
-        const r = act.place.rating != null ? ` ⭐${act.place.rating}` : "";
-        message += `  ${act.time} - ${activityTypeLabel(act.activityType)}: ${act.place.name}${r}\n`;
-      });
-      message += "\n";
-    });
-  } else {
-    message += "_Itinerary not yet generated._";
+// ─────────────────────────────────────────
+//  SEND TO WHATSAPP  — calls the bot API
+//  (NOT wa.me — the bot sends messages directly)
+// ─────────────────────────────────────────
+async function sendToWhatsApp() {
+  if (!itineraryData) {
+    alert("⏳ Please wait for the itinerary to load first.");
+    return;
   }
 
-  const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
-  window.open(url, "_blank");
+  // Get phone from localStorage or prompt user
+  let userPhone = localStorage.getItem('userPhone');
+  if (!userPhone) {
+    userPhone = prompt("📱 Enter your WhatsApp number (with country code, e.g. 9627XXXXXXXX):");
+    if (!userPhone) return;
+    localStorage.setItem('userPhone', userPhone.trim());
+  }
+
+  // Show loading state on button
+  const btn = document.querySelector('[onclick="sendToWhatsApp()"]');
+  const originalText = btn ? btn.innerHTML : '';
+  if (btn) btn.innerHTML = '⏳ Starting bot…';
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/whatsapp/reserve`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({
+        phone:       userPhone.trim(),
+        destination: tripData.city,
+        itinerary:   itineraryData,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok && data.success) {
+      alert(
+        `✅ WhatsApp Bot started!\n\n` +
+        `📱 Check your WhatsApp — the AI Concierge will guide you through ${data.places} reservation(s).\n\n` +
+        `Just reply yes or no to each place 🎉`
+      );
+    } else {
+      alert(`ℹ️ ${data.message || 'Unexpected response from server.'}`);
+    }
+
+  } catch (err) {
+    console.error("sendToWhatsApp error:", err);
+    alert(
+      "❌ Could not connect to the bot server.\n\n" +
+      "Make sure your backend is running on " + API_BASE_URL
+    );
+  } finally {
+    if (btn) btn.innerHTML = originalText;
+  }
 }
 
+// ---------- Save / Sign out ----------
 function saveTrip() {
   const saved = JSON.parse(localStorage.getItem("savedTrips") || "[]");
-  const tripEntry = {
+  saved.push({
     id: Date.now(),
     tripData,
     dayPreferences,
     itinerary: itineraryData,
     savedAt: new Date().toISOString(),
-  };
-  saved.push(tripEntry);
+  });
   localStorage.setItem("savedTrips", JSON.stringify(saved));
   alert("Trip saved successfully! ✅");
 }
@@ -645,22 +550,16 @@ function handleSignOut() {
 function setupReveal() {
   const els = document.querySelectorAll(".reveal:not(.visible)");
   const observer = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add("visible");
-          observer.unobserve(entry.target);
-        }
-      });
-    },
-    { threshold: 0.08 },
+    entries => entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add("visible"); observer.unobserve(e.target); } }),
+    { threshold: 0.08 }
   );
-  els.forEach((el) => observer.observe(el));
+  els.forEach(el => observer.observe(el));
 }
 
 // ---------- Globals ----------
-window.initMap = initMap;
+window.initMap        = initMap;
 window.sendToWhatsApp = sendToWhatsApp;
-window.saveTrip = saveTrip;
-window.handleSignOut = handleSignOut;
+window.saveTrip       = saveTrip;
+window.handleSignOut  = handleSignOut;
+
 document.addEventListener("DOMContentLoaded", init);
