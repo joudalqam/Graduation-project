@@ -17,18 +17,35 @@ const SYSTEM_PROMPT = [
   "Only recommend real places inside Jordan.",
   "Allowed locations are: Amman, Petra, Dead Sea, Wadi Rum, Aqaba, Jerash, Madaba, Ajloun, Dana.",
   "Respect budget levels: low (budget restaurants, free sites), medium (mid-range), high (luxury).",
-  "Match travel styles: adventure, cultural, relaxation, family, romantic.",
+  "Match travel styles: adventure, cultural, relaxation, family, romantic, shopping.",
   "Return JSON only in the specified schema.",
 ].join(" ");
 
-const buildUserPrompt = ({ destination, days, people, budget, style }) => {
+const buildStyleGuidance = (styles = []) => {
+  const normalizedStyles = styles.map((style) => String(style || "").toLowerCase());
+
+  if (normalizedStyles.includes("shopping")) {
+    return [
+      "Focus on shopping-friendly Jordan places when appropriate.",
+      "Prefer malls, local markets, souvenir shops, shopping streets, and traditional bazaars.",
+      "Use Jordan-only examples such as Taj Mall, Abdali Mall, Downtown Amman markets, Souk Jara, and local handicraft shops.",
+    ].join(" ");
+  }
+
+  return "";
+};
+
+const buildUserPrompt = ({ destination, days, people, budget, style, styles }) => {
+  const selectedStyles = Array.isArray(styles) && styles.length > 0 ? styles : [style].filter(Boolean);
+
   return [
     "Create a Jordan-only itinerary in JSON.",
     `destination: ${destination}`,
     `days: ${days}`,
     `people: ${people}`,
     `budget: ${budget}`,
-    `style: ${style}`,
+    `styles: ${selectedStyles.join(", ")}`,
+    buildStyleGuidance(selectedStyles),
     "Schema:",
     "{\"trip\":{\"destination\":\"Jordan\",\"days\":3,\"people\":2,\"budget\":\"medium\",\"style\":\"cultural\",\"itinerary\":[{\"day\":1,\"location\":\"Amman\",\"plan\":[{\"time\":\"Morning\",\"activity\":\"Visit the Amman Citadel\",\"tip\":\"Go early to avoid crowds\"}]}]}}",
   ].join("\n");
@@ -51,7 +68,7 @@ const extractJsonObject = (text) => {
   return JSON.parse(cleaned.slice(firstBrace, lastBrace + 1));
 };
 
-const validateInputs = ({ destination, days, people, budget, style }) => {
+const validateInputs = ({ destination, days, people, budget, style, styles }) => {
   const trimmedDestination = String(destination || "").trim();
 
   if (!ALLOWED_LOCATIONS.includes(trimmedDestination)) {
@@ -84,10 +101,13 @@ const validateInputs = ({ destination, days, people, budget, style }) => {
     throw error;
   }
 
-  const allowedStyles = ["adventure", "cultural", "relaxation", "family", "romantic"];
-  if (!allowedStyles.includes(String(style).toLowerCase())) {
+  const allowedStyles = ["adventure", "cultural", "relaxation", "family", "romantic", "shopping"];
+  const selectedStyles = Array.isArray(styles) && styles.length > 0 ? styles : [style];
+  const normalizedStyles = selectedStyles.map((item) => String(item || "").toLowerCase()).filter(Boolean);
+
+  if (normalizedStyles.length === 0 || normalizedStyles.some((item) => !allowedStyles.includes(item))) {
     const error = new Error(
-      "style must be adventure, cultural, relaxation, family, or romantic",
+      "style must be adventure, cultural, relaxation, family, romantic, or shopping",
     );
     error.statusCode = 400;
     throw error;
@@ -98,13 +118,14 @@ const validateInputs = ({ destination, days, people, budget, style }) => {
     days: parsedDays,
     people: parsedPeople,
     budget: String(budget).toLowerCase(),
-    style: String(style).toLowerCase(),
+    style: normalizedStyles[0],
+    styles: normalizedStyles,
   };
 };
 
-const generateItinerary = async ({ destination, days, people, budget, style }) => {
+const generateItinerary = async ({ destination, days, people, budget, style, styles }) => {
   try {
-    const inputs = validateInputs({ destination, days, people, budget, style });
+    const inputs = validateInputs({ destination, days, people, budget, style, styles });
     const openaiKey = process.env.OPENAI_API_KEY;
     const geminiKey = process.env.GEMINI_API_KEY;
 

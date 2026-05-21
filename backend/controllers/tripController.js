@@ -14,12 +14,14 @@ export async function generateTrip(req, res) {
 
   // ---- 3. Generate the itinerary via Gemini ----
   try {
+
     const itinerary = await generateItinerary({
       destination,
       days,
       people,
       budget,
       style,
+      styles,
     });
 
     return res.status(200).json({ success: true, itinerary });

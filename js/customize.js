@@ -2,35 +2,16 @@
 // AI Trip Planner - Customize Days Page
 // =========================================
 
-// Auto-apply dark mode from localStorage when page loads
-if (localStorage.getItem('darkMode') === 'enabled') {
-  document.body.classList.add('dark');
-  const moonIcon = document.getElementById('moonIcon');
-  const sunIcon = document.getElementById('sunIcon');
-  if (moonIcon) moonIcon.style.display = 'none';
-  if (sunIcon) sunIcon.style.display = 'block';
-}
-
-// Dark mode toggle
-document.getElementById('darkToggle').addEventListener('click', function () {
-  document.body.classList.toggle('dark');
-  if (document.body.classList.contains('dark')) {
-    localStorage.setItem('darkMode', 'enabled');
-    document.getElementById('moonIcon').style.display = 'none';
-    document.getElementById('sunIcon').style.display = 'block';
-  } else {
-    localStorage.setItem('darkMode', 'disabled');
-    document.getElementById('moonIcon').style.display = 'block';
-    document.getElementById('sunIcon').style.display = 'none';
-  }
-});
+// Dark mode is handled globally by layout.js → initDarkModeGlobal() in utils.js
+// after the navbar has been injected into the DOM.
+// No duplicate wiring needed here.
 
 const VIBE_OPTIONS = [
   {
     value: 'adventure',
     label: 'Adventure',
     emoji: '🏔️',
-    image: 'mountain-hiking.webp',
+    image: 'mountain-hiking.jpeg',
     description: 'Outdoor activities and exploration',
   },
   {
@@ -39,6 +20,13 @@ const VIBE_OPTIONS = [
     emoji: '🍜',
     image: 'food.jpg',
     description: 'Culinary experiences and dining',
+  },
+  {
+    value: 'shopping',
+    label: 'Shopping',
+    emoji: '🛍️',
+    image: 'shopping.jpg',
+    description: 'Malls, souks, bazaars, and local markets',
   },
   {
     value: 'relaxing',
@@ -64,6 +52,7 @@ function init() {
 
   dayPreferences = Array.from({ length: days }, (_, i) => ({
     day: i + 1,
+    vibes: [],
     vibe: null,
   }));
 
@@ -109,21 +98,27 @@ function createDayCard(dayNum) {
         <p>Select the type of experience you want for this day of your journey</p>
         <div class="day-photo-wrap">
           <div class="teal-rect"></div>
-          <img src="mountain-hiking.webp" alt="Day ${dayNum}" id="dayPhoto-${dayNum}" />
+          <img src="mountain-hiking.jpeg" alt="Day ${dayNum}" id="dayPhoto-${dayNum}" />
         </div>
       </div>
       <div class="vibe-options">
         ${VIBE_OPTIONS.map(opt => `
-          <button class="vibe-option" id="vibe-${dayNum}-${opt.value}" onclick="selectVibe(${dayNum}, '${opt.value}')">
+          <label class="vibe-option" id="vibe-${dayNum}-${opt.value}">
+            <input
+              type="checkbox"
+              class="vibe-checkbox"
+              id="vibe-${dayNum}-${opt.value}-input"
+              onchange="toggleVibe(${dayNum}, '${opt.value}', this)"
+            />
             <img src="${opt.image}" alt="${opt.label}" />
             <div class="vibe-info">
               <strong>${opt.emoji} ${opt.label}</strong>
               <span>${opt.description}</span>
             </div>
-            <div class="check-circle">
+            <div class="check-circle" aria-hidden="true">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             </div>
-          </button>
+          </label>
         `).join('')}
       </div>
     </div>
@@ -132,31 +127,52 @@ function createDayCard(dayNum) {
   return card;
 }
 
-function selectVibe(dayNum, vibe) {
-  // Update state
-  const pref = dayPreferences.find(p => p.day === dayNum);
-  if (pref) pref.vibe = vibe;
+function toggleVibe(dayNum, vibe, checkbox) {
+  const pref = dayPreferences.find((p) => p.day === dayNum);
+  if (!pref) return;
 
-  // Update UI - deselect all for this day
-  VIBE_OPTIONS.forEach(opt => {
-    const btn = document.getElementById(`vibe-${dayNum}-${opt.value}`);
-    if (btn) btn.classList.remove('selected');
-  });
+  if (!Array.isArray(pref.vibes)) {
+    pref.vibes = pref.vibe ? [pref.vibe] : [];
+  }
 
-  // Select clicked
-  const selected = document.getElementById(`vibe-${dayNum}-${vibe}`);
-  if (selected) selected.classList.add('selected');
+  if (checkbox.checked) {
+    if (!pref.vibes.includes(vibe)) {
+      pref.vibes.push(vibe);
+    }
+  } else {
+    pref.vibes = pref.vibes.filter((value) => value !== vibe);
+  }
 
-  // Update day photo
+  pref.vibe = pref.vibes[0] || null;
+
+  const option = document.getElementById(`vibe-${dayNum}-${vibe}`);
+  if (option) {
+    option.classList.toggle('selected', checkbox.checked);
+  }
+
   const photo = document.getElementById(`dayPhoto-${dayNum}`);
   if (photo) {
-    const opt = VIBE_OPTIONS.find(o => o.value === vibe);
+    const activeVibe = pref.vibes[0] || tripData.travelStyle || 'adventure';
+    const opt = VIBE_OPTIONS.find((o) => o.value === activeVibe);
     if (opt) photo.src = opt.image;
   }
 }
 
 function handleGenerate() {
   console.log('[customize] handleGenerate fired', dayPreferences);
+
+  // If any day has no selection, default to travel style
+  dayPreferences.forEach(pref => {
+    if (!Array.isArray(pref.vibes)) {
+      pref.vibes = pref.vibe ? [pref.vibe] : [];
+    }
+
+    if (!pref.vibes.length) {
+      pref.vibes = [tripData.travelStyle || 'adventure'];
+    }
+
+    pref.vibe = pref.vibes[0] || null;
+  });
 
   dayPreferences.forEach(pref => {
     if (!pref.vibe) pref.vibe = 'adventure'

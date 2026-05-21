@@ -39,13 +39,34 @@ body.dark {
 /* ===== COLOR VARIABLES (CSS Custom Properties) =====
    Centralized color scheme - change once, updates everywhere */
 :root {
-  --teal:       #0ABFBC;    /* Primary brand color - used for buttons, icons, accents */
-  --teal-dark:  #09a8a5;    /* Darker teal for hover states */
-  --navy:       #1C2B4A;    /* Dark blue for main text in light mode */
-  --sidebar:    #1C6B6B;    /* Dark color for hero social sidebar */
-  --bg-light:   #F5F7FA;    /* Light gray background for sections */
-  --bg-dark:    #0F172A;    /* Very dark background for dark mode */
-  --card-dark:  #1E293B;    /* Dark gray cards in dark mode */
+  --teal:        #0ABFBC;    /* Primary brand color - used for buttons, icons, accents */
+  --teal-dark:   #09a8a5;    /* Darker teal for hover states */
+  --navy:        #1C2B4A;    /* Dark blue for main text in light mode */
+  --sidebar:     #1C6B6B;    /* Dark color for hero social sidebar */
+  --bg-light:    #F5F7FA;    /* Light gray background for sections */
+  --bg-dark:     #0F172A;    /* Very dark background for dark mode */
+  --card-dark:   #1E293B;    /* Dark gray cards in dark mode */
+  --section-bg:  #ffffff;    /* Default white section background */
+  --contact-bg:  var(--bg-light); /* Light mode: follows global theme (light gray) */
+
+  /* Footer theme tokens — light mode */
+  --footer-bg:      var(--bg-light); /* Same light gray as other sections */
+  --footer-text:    var(--navy);     /* Dark navy text */
+  --footer-muted:   #6b7280;         /* Muted gray for secondary text/links */
+  --footer-border:  #e5e7eb;         /* Subtle border separator */
+  --footer-icon:    #6b7280;         /* Social icon color */
+}
+
+body.dark {
+  --section-bg:  #0F172A;    /* Dark mode section background */
+  --contact-bg:  #0F172A;    /* Dark mode contact bg */
+
+  /* Footer theme tokens — dark mode */
+  --footer-bg:      #0F172A;              /* Very dark background */
+  --footer-text:    #ffffff;              /* White text */
+  --footer-muted:   rgba(255,255,255,0.65); /* Muted white for secondary text */
+  --footer-border:  rgba(255,255,255,0.1);  /* Subtle white border */
+  --footer-icon:    rgba(255,255,255,0.7);  /* Social icon color */
 }
 
 /* ===== NAVBAR SECTION =====
@@ -78,26 +99,48 @@ body.dark .navbar {
 .navbar-logo {
   display: flex;
   align-items: center;
-  gap: 12px;
   cursor: pointer;
   text-decoration: none;
 }
 
-.navbar-logo-icon {
-  position: relative;
-  width: 36px;
-  height: 36px;
+.navbar-logo-image {
+  display: block;
+  width: auto;
+  height: 65px;
+  object-fit: contain;
+  background: transparent;
+  mix-blend-mode: normal;
+  mask-image: none;
+  -webkit-mask-image: none;
+  /* Light mode: tint logo teal so it is visible on the white navbar */
+  filter: brightness(0) saturate(100%) invert(62%) sepia(98%) saturate(380%) hue-rotate(138deg) brightness(97%) contrast(98%);
+  will-change: filter;
+  margin: -10px 0;
+  transition: filter 0.3s;
 }
 
+/* Dark mode navbar: logo becomes pure white on the dark (#1E293B) background */
+body.dark .navbar-logo-image {
+  mix-blend-mode: normal;
+  filter: brightness(0) invert(1);
+}
+
+/* Footer logo inherits the same filter/color as the navbar logo in each theme.
+   No override needed — .navbar-logo-image and .navbar-logo-text handle both modes. */
+
+/* Logo text: teal in light mode (matches Send Message button accent), white in dark mode */
 .navbar-logo-text {
   font-family: 'DM Sans', sans-serif;
   font-weight: 700;
   font-size: 1.4rem;
-  color: var(--navy);
+  color: var(--teal);        /* Matches button accent — visible on white navbar */
   transition: color 0.3s;
 }
 
 body.dark .navbar-logo-text { color: #fff; }
+
+/* Footer logo text: follows .navbar-logo-text — teal in light, white in dark.
+   No separate override needed. */
 
 .navbar-links {
   display: flex;
@@ -414,10 +457,30 @@ body.dark .btn-ghost { color: #d1d5db; }
    Showcases 6 key features with icon cards */
 .features-section {
   padding: 80px 0;              /* Large vertical padding */
-  background: #fff;             /* White background */
+  background: var(--section-bg); /* Uses CSS variable — white in light, dark in dark mode */
   transition: background 0.3s;  /* Smooth transition for dark mode */
 }
-body.dark .features-section { background: #0F172A; } /* Dark background */
+body.dark .features-section { background: var(--section-bg); } /* Dark background */
+
+#contact {
+  /* Follows global theme: --bg-light in light mode, #0F172A in dark mode */
+  background: var(--contact-bg);
+  transition: background 0.3s;
+}
+
+/* Light mode contact: text uses the standard section heading colors (navy / gray) */
+/* No overrides needed — inherits from .section-heading rules below */
+
+/* Dark mode contact: force heading text to white since bg is dark */
+body.dark #contact .section-heading .display {
+  color: rgba(255, 255, 255, 0.2);
+}
+body.dark #contact .section-heading .script {
+  color: var(--teal);
+}
+body.dark #contact .section-heading p {
+  color: rgba(255, 255, 255, 0.65);
+}
 
 .section-inner {
   max-width: 1280px;            /* Container max width */
@@ -429,6 +492,39 @@ body.dark .features-section { background: #0F172A; } /* Dark background */
 .section-heading {
   text-align: center;           /* Center all content */
   margin-bottom: 56px;          /* Space below heading */
+}
+
+#contact .section-heading {
+  position: relative;
+  padding-top: 18px;
+  margin-bottom: 72px;
+}
+
+#contact .section-heading .display {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 0;
+  width: 100%;
+  line-height: 1;
+  pointer-events: none;
+}
+
+/* body.dark #contact .section-heading .display color is set near the #contact rule above */
+
+#contact .section-heading .script,
+#contact .section-heading p {
+  position: relative;
+  z-index: 1;
+}
+
+#contact .section-heading .script {
+  margin-bottom: 10px;
+}
+
+#contact .section-heading p {
+  margin-top: 18px;
 }
 
 .section-heading .script {
@@ -541,6 +637,11 @@ body.dark .trip-form-card { background: #1E293B; } /* Dark card in dark mode */
   margin-bottom: 24px;
 }
 
+.form-group,
+.input-group {
+  position: relative;
+}
+
 /* Form label with icon */
 .form-group label {
   display: flex;                /* Flex for icon + text */
@@ -585,6 +686,98 @@ body.dark .form-input {
   border-color: var(--teal);    /* Teal border on focus */
 }
 .form-input::placeholder { color: #9ca3af; } /* Light gray placeholder */
+
+.form-input.input-error,
+.form-group.has-error .form-input,
+.input-group.has-error input,
+.input-with-icon.has-error input,
+.input-with-icon.has-error textarea,
+.form-group.has-error textarea {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.12);
+  background: rgba(239, 68, 68, 0.03);
+}
+
+.field-error {
+  margin-top: 8px;
+  color: #ef4444;
+  font-size: 0.82rem;
+  line-height: 1.35;
+  font-weight: 500;
+  animation: validationFadeIn 0.2s ease;
+}
+
+.form-status {
+  margin-top: 16px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  font-weight: 500;
+  animation: validationFadeIn 0.2s ease;
+}
+
+.form-status.error {
+  color: #991b1b;
+  background: rgba(220, 38, 38, 0.08);
+  border: 1px solid rgba(220, 38, 38, 0.18);
+}
+
+.form-status.success {
+  color: #065f46;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.18);
+}
+
+body.dark .field-error {
+  color: #fca5a5;
+}
+
+body.dark .form-status.error {
+  color: #fecaca;
+  background: rgba(185, 28, 28, 0.18);
+  border-color: rgba(248, 113, 113, 0.2);
+}
+
+body.dark .form-status.success {
+  color: #d1fae5;
+  background: rgba(6, 95, 70, 0.24);
+  border-color: rgba(16, 185, 129, 0.18);
+}
+
+.validation-shake {
+  animation: validationShake 0.34s ease-in-out;
+}
+
+@keyframes validationFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes validationShake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-3px);
+  }
+  40% {
+    transform: translateX(3px);
+  }
+  60% {
+    transform: translateX(-2px);
+  }
+  80% {
+    transform: translateX(2px);
+  }
+}
 
 /* Destination Suggestions Dropdown */
 .destination-suggestions {
@@ -702,73 +895,84 @@ body.dark .style-option label {
 .btn-generate:hover { opacity: 0.92; } /* Slightly transparent on hover */
 .btn-generate:active { transform: scale(0.98); } /* Slight shrink when clicked */
 
-/* ===== FOOTER ===== 
-   Bottom section with brand, links, and copyright */
+/* ===== FOOTER =====
+   Bottom section with brand, links, and copyright.
+   Uses CSS variables that flip between light/dark — fully theme-reactive. */
 .footer {
-  background: var(--navy);      /* Dark navy background */
-  color: #fff;                   /* White text */
-  padding: 56px 0 0;             /* Top padding */
-  transition: background 0.3s;   /* Transition for dark mode */
+  background: var(--footer-bg);   /* Light gray in light mode, #0F172A in dark */
+  color: var(--footer-text);      /* Navy in light mode, white in dark */
+  padding: 56px 0 0;
+  transition: background 0.3s, color 0.3s;
 }
 
-body.dark .footer { background: #0F172A; }  /* Very dark background in dark mode */
+/* Footer logo — shares .navbar-logo-image and .navbar-logo-text.
+   Both adapt automatically: teal icon+text in light mode, white in dark mode. */
 
 /* 3-column footer layout */
 .footer-grid {
-  max-width: 1280px;             /* Container width */
+  max-width: 1280px;
   margin: 0 auto;
-  padding: 0 32px 40px;          /* Horizontal padding and bottom spacing */
+  padding: 0 32px 40px;
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr;  /* Brand gets 2x space, links get 1x each */
-  gap: 40px;                     /* Large space between columns */
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 40px;
 }
 
-/* Footer brand section (left column) */
+/* Footer column headings */
+.footer-col h4 {
+  color: var(--footer-text);      /* Adapts with theme */
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 700;
+  font-size: 1rem;
+  margin-bottom: 16px;
+}
+
+/* Footer brand tagline */
 .footer-brand p {
-  color: rgba(255,255,255,0.65);  /* Slightly transparent white */
+  color: var(--footer-muted);     /* Muted gray / muted white */
   font-size: 0.92rem;
-  line-height: 1.6;               /* Good readability */
+  line-height: 1.6;
   margin: 16px 0 20px;
 }
 
-/* Social media icons in footer */
+/* Social media icons */
 .footer-social {
-  display: flex;                  /* Horizontal layout */
-  gap: 16px;                      /* Space between icons */
+  display: flex;
+  gap: 16px;
 }
 
 .footer-social a {
-  color: rgba(255,255,255,0.7);   /* Slightly transparent white */
-  transition: color 0.2s;         /* Smooth hover transition */
-  display: flex;                  /* For icon centering */
+  color: var(--footer-icon);      /* Adapts with theme */
+  transition: color 0.2s;
+  display: flex;
 }
 
-.footer-social a:hover { color: var(--teal); } /* Turn teal on hover */
+.footer-social a:hover { color: var(--teal); }
 
-/* Footer column headings (Quick Links, Support) */
+/* Footer link columns */
 .footer-col ul {
-  list-style: none;               /* Remove default bullet points */
-  display: flex;                  /* Vertical layout */
+  list-style: none;
+  display: flex;
   flex-direction: column;
-  gap: 10px;                      /* Space between links */
+  gap: 10px;
 }
 
 .footer-col ul a {
-  color: rgba(255,255,255,0.65);  /* Slightly transparent white */
-  text-decoration: none;          /* No underline */
+  color: var(--footer-muted);     /* Muted gray / muted white */
+  text-decoration: none;
   font-size: 0.9rem;
-  transition: color 0.2s;         /* Smooth hover transition */
+  transition: color 0.2s;
 }
 
-.footer-col ul a:hover { color: var(--teal); } /* Turn teal on hover */
+.footer-col ul a:hover { color: var(--teal); }
 
-/* Copyright text at very bottom */
+/* Copyright bar */
 .footer-bottom {
-  border-top: 1px solid rgba(255,255,255,0.1); /* Subtle divider line */
-  padding: 24px 32px;             /* Padding around text */
-  text-align: center;             /* Center alignment */
-  color: rgba(255,255,255,0.55);  /* Very faint white text */
-  font-size: 0.88rem;             /* Smaller font */
+  border-top: 1px solid var(--footer-border); /* Adapts with theme */
+  padding: 24px 32px;
+  text-align: center;
+  color: var(--footer-muted);     /* Muted gray / muted white */
+  font-size: 0.88rem;
   max-width: 1280px;
   margin: 0 auto;
 }
@@ -831,6 +1035,7 @@ body.dark .footer { background: #0F172A; }  /* Very dark background in dark mode
   font-size: 1.75rem;
   color: var(--navy);
 }
+body.dark .login-logo span { color: #ffffff; }
 
 .login-card {
   background: #fff;
@@ -1304,6 +1509,17 @@ body.dark .day-card-text .display { color: #fff; }
   text-align: left;
 }
 
+.vibe-checkbox {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.vibe-option:focus-within {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 4px rgba(10,191,188,0.12);
+}
+
 body.dark .vibe-option { border-color: #374151; }
 
 .vibe-option:hover {
@@ -1345,7 +1561,7 @@ body.dark .vibe-info strong { color: #fff; }
 .check-circle {
   width: 24px;
   height: 24px;
-  border-radius: 50%;
+  border-radius: 7px;
   border: 2px solid #e5e7eb;
   display: flex;
   align-items: center;
@@ -1367,6 +1583,10 @@ body.dark .vibe-info strong { color: #fff; }
 }
 
 .vibe-option.selected .check-circle svg { opacity: 1; }
+
+body.dark .check-circle {
+  border-color: #4b5563;
+}
 
 .generate-btn-wrap {
   text-align: center;
@@ -1571,6 +1791,22 @@ body.dark .activity-price { color: #9ca3af; }
   display: flex;
   flex-direction: column;
   gap: 24px;
+  /* Sticky panel: stays visible while the itinerary scrolls */
+  position: sticky;
+  top: 88px;                          /* clears the fixed navbar */
+  align-self: start;                  /* required for sticky inside a grid row */
+  max-height: calc(100vh - 100px);    /* never taller than the viewport */
+  overflow-y: auto;                   /* scroll internally if content overflows */
+  padding-bottom: 24px;               /* Ensure bottom map is not cut off by screen edge */
+}
+
+/* Optional custom scrollbar for the sidebar to make it clear it's scrollable */
+.result-sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+.result-sidebar::-webkit-scrollbar-thumb {
+  background-color: rgba(156, 163, 175, 0.5);
+  border-radius: 10px;
 }
 
 .sidebar-card {
@@ -1579,8 +1815,7 @@ body.dark .activity-price { color: #9ca3af; }
   box-shadow: 0 8px 24px rgba(0,0,0,0.07);
   padding: 28px;
   transition: background 0.3s;
-  position: sticky;
-  top: 88px;
+  /* Sticky is handled by .result-sidebar — no per-card sticky needed */
 }
 
 body.dark .sidebar-card { background: #1E293B; }

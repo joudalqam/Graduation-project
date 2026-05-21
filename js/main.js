@@ -4,37 +4,14 @@
 
 const BASE_URL = "http://localhost:5000/api"
 
-// Dark mode - load state from localStorage on page load
-const moonIcon = document.getElementById('moonIcon');
-const sunIcon = document.getElementById('sunIcon');
-
-if (localStorage.getItem('darkMode') === 'enabled') {
-  document.body.classList.add('dark');
-  if (moonIcon) moonIcon.style.display = 'none';
-  if (sunIcon) sunIcon.style.display = 'block';
-}
-
-// Toggle dark mode on click
-const darkToggleBtn = document.getElementById('darkToggle');
-if (darkToggleBtn) {
-  darkToggleBtn.addEventListener('click', function () {
-    document.body.classList.toggle('dark');
-    if (document.body.classList.contains('dark')) {
-      localStorage.setItem('darkMode', 'enabled');
-      if (moonIcon) moonIcon.style.display = 'none';
-      if (sunIcon) sunIcon.style.display = 'block';
-    } else {
-      localStorage.setItem('darkMode', 'disabled');
-      if (moonIcon) moonIcon.style.display = 'block';
-      if (sunIcon) sunIcon.style.display = 'none';
-    }
-  });
-}
+// Dark mode is handled globally by layout.js → initDarkModeGlobal() in utils.js
+// after the navbar has been injected into the DOM.
+// No duplicate wiring needed here.
 
 // Hero slide dots (use actual filenames present in project)
 const heroImages = [
   'daedsea.jpg',
-  'mountain-hiking.webp',
+  'mountain-hiking.jpeg',
   'petra.jpg',
 ];
 
@@ -98,9 +75,14 @@ if (heroBg) {
   });
 }
 
-// Check if user is logged in
+// ── AUTH CHECK ────────────────────────────────────────────────────────────────
+// Accepts either a JWT token (issued by backend) or the isLoggedIn flag
+// (set when registration completes locally before email verification).
 function isLoggedIn() {
-  return localStorage.getItem('token') !== null
+  return (
+    localStorage.getItem('token') !== null ||
+    localStorage.getItem('isLoggedIn') === 'true'
+  );
 }
 
 // Get Started button (navbar)
@@ -143,7 +125,7 @@ const JORDAN_CITIES = [
   "Qasr Kharana", "Qasr Al-Hallabat", "Umm Al-Jimal",
   "Pella", "Gadara", "Dibeen Forest", "Mujib Biosphere Reserve",
 
-  // Regions and Areas  
+  // Regions and Areas
   "Balqa", "Zarqa Governorate", "Jerash Governorate",
   "Ajloun Governorate", "Mafraq Governorate",
   "Tafilah Governorate", "Ma'an Governorate",
@@ -169,16 +151,17 @@ const JORDAN_CITIES = [
   "Yutm", "Rum Village", "Diseh"
 ];
 
-// Setup destination autocomplete
+// ── DESTINATION AUTOCOMPLETE ──────────────────────────────────────────────────
 function setupDestinationAutocomplete() {
   const destinationInput = document.getElementById('destination');
   const suggestionsContainer = document.getElementById('destinationSuggestions');
 
-  if (!destinationInput) return;
+  // Guard: both elements must exist on this page
+  if (!destinationInput || !suggestionsContainer) return;
 
   destinationInput.addEventListener('input', (e) => {
     const value = e.target.value.trim();
-    
+
     if (value.length === 0) {
       suggestionsContainer.style.display = 'none';
       return;
@@ -225,14 +208,29 @@ function setupDestinationAutocomplete() {
 }
 
 function selectDestination(city) {
-  document.getElementById('destination').value = city;
-  document.getElementById('destinationSuggestions').style.display = 'none';
+  const input = document.getElementById('destination');
+  const suggestions = document.getElementById('destinationSuggestions');
+  if (input) input.value = city;
+  if (suggestions) suggestions.style.display = 'none';
 }
 
-// Trip form submit
+function setupValidationHooks() {
+  if (!window.FormValidation) return;
+
+  const tripForm = document.getElementById('tripForm');
+  const contactForm = document.getElementById('contactForm');
+  if (tripForm) window.FormValidation.bindLiveValidation(tripForm);
+  if (contactForm) window.FormValidation.bindLiveValidation(contactForm);
+}
+
+// ── TRIP FORM SUBMIT ──────────────────────────────────────────────────────────
+// Bug fix: declare `validation` locally (was undefined — caused the crash).
+// Bug fix: removed duplicate integer-validation block that ran after `validation`
+//          was referenced — backend already validates range server-side.
 function handleTripFormSubmit(e) {
   e.preventDefault();
 
+  // ── 1. Auth gate ──
   if (!isLoggedIn()) {
     sessionStorage.setItem('redirectAfterLogin', 'planner');
     showToast('Please sign in to generate your trip plan', 'error');
@@ -240,17 +238,18 @@ function handleTripFormSubmit(e) {
     return;
   }
 
-  // Validate fields with red highlights
+  // ── 2. Required-field check with inline errors ──
   let valid = true;
   const fields = [
     { id: 'destination', msg: 'Please enter a destination' },
-    { id: 'days', msg: 'Please enter number of days' },
-    { id: 'people', msg: 'Please enter number of people' },
-    { id: 'budget', msg: 'Please enter your budget' },
+    { id: 'days',        msg: 'Please enter number of days' },
+    { id: 'people',      msg: 'Please enter number of people' },
+    { id: 'budget',      msg: 'Please enter your budget' },
   ];
 
   fields.forEach(f => {
     const input = document.getElementById(f.id);
+    if (!input) return; // defensive null check
     if (!input.value.trim()) {
       showFieldError(input, f.msg);
       valid = false;
@@ -260,70 +259,100 @@ function handleTripFormSubmit(e) {
   });
 
   if (!valid) {
-    showToast('Please fill in all fields!', 'error');
+    showToast('Please fill in all required fields!', 'error');
     return;
   }
 
-  // Validate destination is a Jordan city
-  const destination = document.getElementById('destination').value.trim();
+  // ── 3. Grab field references after passing required check ──
+  const destinationField = document.getElementById('destination');
+  const daysField        = document.getElementById('days');
+  const peopleField      = document.getElementById('people');
+  const budgetField      = document.getElementById('budget');
+
+  // ── 4. Jordan city whitelist validation ──
+  const destination = destinationField.value.trim();
   const isValidCity = JORDAN_CITIES.some(city =>
     city.toLowerCase() === destination.toLowerCase()
   );
 
   if (!isValidCity) {
-    showFieldError(document.getElementById('destination'), 'Please enter a valid city in Jordan');
+    showFieldError(destinationField, 'Please enter a valid city in Jordan');
     showToast('Please enter a valid city in Jordan only', 'error');
     return;
   }
 
+  // ── 5. Numeric sanity checks (client-side, non-crashing) ──
+  const days   = parseInt(daysField.value, 10);
+  const people = parseInt(peopleField.value, 10);
+  const budget = parseFloat(budgetField.value);
+
+  if (isNaN(days) || days < 1 || days > 14) {
+    showFieldError(daysField, 'Days must be between 1 and 14');
+    showToast('Please enter a valid number of days (1–14)', 'error');
+    return;
+  }
+  if (isNaN(people) || people < 1) {
+    showFieldError(peopleField, 'Number of people must be at least 1');
+    showToast('Please enter a valid number of people', 'error');
+    return;
+  }
+  if (isNaN(budget) || budget < 100) {
+    showFieldError(budgetField, 'Budget must be at least $100');
+    showToast('Please enter a valid budget (min $100)', 'error');
+    return;
+  }
+
+  // ── 6. Save to session and navigate ──
   const tripData = {
-    destination: destination,
+    destination,
     city: destination,
-    days: document.getElementById('days').value,
-    people: document.getElementById('people').value,
-    budget: document.getElementById('budget').value,
+    days: String(days),
+    people: String(people),
+    budget: String(budget),
   };
 
   sessionStorage.setItem('tripData', JSON.stringify(tripData));
 
-  // Show loading animation
   showLoading('Preparing your trip...', 'Setting up your customization options');
   setTimeout(() => {
     location.href = 'customize.html';
   }, 1500);
 }
 
-// Logout function
+// ── AUTH / NAV ────────────────────────────────────────────────────────────────
+// Logout function — clears all auth-related keys
 function logout() {
   localStorage.removeItem('token');
   localStorage.removeItem('isLoggedIn');
   localStorage.removeItem('userName');
   localStorage.removeItem('userEmail');
   localStorage.removeItem('userId');
+  localStorage.removeItem('userPhone');
+  localStorage.removeItem('userAvatar');
   location.href = 'index.html';
 }
 
 // Update navbar based on login state
 function updateNavbar() {
-  const token = localStorage.getItem('token');
-  const userName = localStorage.getItem('userName');
+  const token     = localStorage.getItem('token');
+  const userName  = localStorage.getItem('userName');
   const userEmail = localStorage.getItem('userEmail');
-  const userMenu = document.getElementById('userMenu');
+  const userMenu  = document.getElementById('userMenu');
   const signUpBtn = document.getElementById('signUpBtn');
 
   if (token) {
-    if (userMenu) userMenu.classList.remove('hidden');
+    if (userMenu)  userMenu.classList.remove('hidden');
     if (signUpBtn) signUpBtn.classList.add('hidden');
 
-    const navName = document.getElementById('navUserName');
-    const dropName = document.getElementById('dropdownUserName');
-    const dropEmail = document.getElementById('dropdownUserEmail');
+    const navName    = document.getElementById('navUserName');
+    const dropName   = document.getElementById('dropdownUserName');
+    const dropEmail  = document.getElementById('dropdownUserEmail');
 
-    if (navName) navName.textContent = userName || 'User';
-    if (dropName) dropName.textContent = userName || 'User';
+    if (navName)   navName.textContent  = userName  || 'User';
+    if (dropName)  dropName.textContent = userName  || 'User';
     if (dropEmail) dropEmail.textContent = userEmail || '';
   } else {
-    if (userMenu) userMenu.classList.add('hidden');
+    if (userMenu)  userMenu.classList.add('hidden');
     if (signUpBtn) signUpBtn.classList.remove('hidden');
   }
 }
@@ -348,13 +377,42 @@ function handleMyTrips() {
   location.href = 'result.html';
 }
 
-// Initialize autocomplete on page load
-document.addEventListener('DOMContentLoaded', () => {
-  setupDestinationAutocomplete();
-  setupReveal();
-});
+// ── CONTACT FORM ──────────────────────────────────────────────────────────────
+function handleContactFormSubmit(e) {
+  e.preventDefault();
 
-// Scroll reveal animation
+  const validation  = window.FormValidation; // properly scoped
+  const contactForm = document.getElementById('contactForm');
+
+  if (validation) {
+    validation.clearFormErrors(contactForm);
+  }
+
+  const nameField    = document.getElementById('contactName');
+  const emailField   = document.getElementById('contactEmail');
+  const messageField = document.getElementById('contactMessage');
+
+  let isValid = true;
+
+  if (validation) {
+    isValid = validation.validateRequiredField(nameField,    'Name')    && isValid;
+    isValid = validation.validateEmailField(emailField,      'Email')   && isValid;
+    isValid = validation.validateRequiredField(messageField, 'Message') && isValid;
+  }
+
+  if (!isValid) {
+    if (validation) validation.focusFirstInvalidField(contactForm);
+    return;
+  }
+
+  contactForm.reset();
+  if (validation) {
+    validation.clearFormErrors(contactForm);
+    validation.showFormStatus(contactForm, "Thanks! We received your message.", 'success');
+  }
+}
+
+// ── SCROLL REVEAL ─────────────────────────────────────────────────────────────
 function setupReveal() {
   const els = document.querySelectorAll('.reveal')
   const observer = new IntersectionObserver(
@@ -371,7 +429,12 @@ function setupReveal() {
   els.forEach((el) => observer.observe(el))
 }
 
+// ── BOOT — single DOMContentLoaded listener ───────────────────────────────────
+// Bug fix: was two separate listeners; merged into one so all init runs together
+// and updateNavbar is guaranteed to run on every page load.
 document.addEventListener('DOMContentLoaded', () => {
-  setupReveal()
-  updateNavbar()
-})
+  setupDestinationAutocomplete();
+  setupValidationHooks();
+  setupReveal();
+  updateNavbar();
+});

@@ -7,31 +7,9 @@
 
 const API_BASE_URL = "http://localhost:5000";
 
-// ---------- Dark mode ----------
-(function initDarkMode() {
-  if (localStorage.getItem("darkMode") === "enabled") {
-    document.body.classList.add("dark");
-    const moonIcon = document.getElementById("moonIcon");
-    const sunIcon = document.getElementById("sunIcon");
-    if (moonIcon) moonIcon.style.display = "none";
-    if (sunIcon) sunIcon.style.display = "block";
-  }
-})();
-
-document.getElementById("darkToggle").addEventListener("click", function () {
-  const isDark = document.body.classList.toggle("dark");
-  const moonIcon = document.getElementById("moonIcon");
-  const sunIcon = document.getElementById("sunIcon");
-  if (isDark) {
-    localStorage.setItem("darkMode", "enabled");
-    if (moonIcon) moonIcon.style.display = "none";
-    if (sunIcon) sunIcon.style.display = "block";
-  } else {
-    localStorage.setItem("darkMode", "disabled");
-    if (moonIcon) moonIcon.style.display = "block";
-    if (sunIcon) sunIcon.style.display = "none";
-  }
-});
+// Dark mode is handled globally by layout.js → initDarkModeGlobal() in utils.js
+// after the navbar has been injected into the DOM.
+// No duplicate wiring needed here.
 
 // ---------- State ----------
 let tripData = null;
@@ -45,13 +23,15 @@ let routeLines = [];          // one polyline per day
 
 // ---------- Helpers: map frontend prefs -> backend preferences ----------
 
-// travelStyle (adventure | food | relaxing) -> backend tripType
+// travelStyle (adventure | food | shopping | relaxing) -> backend tripType
 function mapTravelStyleToTripType(style) {
   switch ((style || "").toLowerCase()) {
     case "adventure":
       return "adventure";
     case "food":
       return "cultural";
+    case "shopping":
+      return "shopping";
     case "relaxing":
       return "relaxation";
     default:
@@ -80,11 +60,34 @@ function pickDominantTripType(prefs, fallback) {
   if (!Array.isArray(prefs) || prefs.length === 0) return fallback;
   const counts = {};
   prefs.forEach((p) => {
-    if (!p?.vibe) return;
-    counts[p.vibe] = (counts[p.vibe] || 0) + 1;
+    const vibes = Array.isArray(p?.vibes)
+      ? p.vibes
+      : p?.vibe
+        ? [p.vibe]
+        : [];
+
+    vibes.forEach((vibe) => {
+      counts[vibe] = (counts[vibe] || 0) + 1;
+    });
   });
   const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
   return top ? mapTravelStyleToTripType(top[0]) : fallback;
+}
+
+function getDayVibes(pref) {
+  if (Array.isArray(pref?.vibes) && pref.vibes.length > 0) {
+    return pref.vibes;
+  }
+
+  if (pref?.vibe) {
+    return [pref.vibe];
+  }
+
+  return [];
+}
+
+function getPrimaryVibe(pref) {
+  return getDayVibes(pref)[0] || null;
 }
 
 // ---------- Init ----------
@@ -105,14 +108,27 @@ function init() {
   if (!dayPreferences.length) {
     dayPreferences = Array.from({ length: days }, (_, i) => ({
       day: i + 1,
+      vibes: [tripData.travelStyle || "adventure"],
       vibe: tripData.travelStyle || "adventure",
     }));
   }
 
   renderHeroPills();
   renderTripSummary();
-  renderItineraryLoading();
-  fetchAndRenderItinerary();
+  
+  // Issue 2: Prevent Plan Regeneration on Page Refresh
+  const savedItinerary = sessionStorage.getItem("currentItinerary");
+  const savedFlatPlaces = sessionStorage.getItem("currentFlatPlaces");
+
+  if (savedItinerary && savedFlatPlaces) {
+    itineraryData = JSON.parse(savedItinerary);
+    flatPlaces = JSON.parse(savedFlatPlaces);
+    renderItinerary();
+    if (map) renderMapFromItinerary();
+  } else {
+    renderItineraryLoading();
+    fetchAndRenderItinerary();
+  }
 }
 
 // ---------- Header & summary ----------
@@ -138,10 +154,9 @@ function renderHeroPills() {
 }
 
 function renderTripSummary() {
-  const vibeStyle = tripData.travelStyle
-    ? tripData.travelStyle.charAt(0).toUpperCase() +
-      tripData.travelStyle.slice(1)
-    : "Adventure";
+  const primaryPreference = dayPreferences.find((pref) => getPrimaryVibe(pref)) || null;
+  const summaryStyle = getPrimaryVibe(primaryPreference) || tripData.travelStyle || "adventure";
+  const vibeStyle = summaryStyle.charAt(0).toUpperCase() + summaryStyle.slice(1);
 
   document.getElementById("tripSummary").innerHTML = `
     <div class="trip-summary-item">
@@ -278,6 +293,10 @@ async function fetchAndRenderItinerary() {
     itineraryData = data.itinerary;
     flatPlaces = flattenItineraryPlaces(itineraryData);
 
+    // Save exact state to sessionStorage to persist on refresh
+    sessionStorage.setItem("currentItinerary", JSON.stringify(itineraryData));
+    sessionStorage.setItem("currentFlatPlaces", JSON.stringify(flatPlaces));
+
     renderItinerary();
     renderMapFromItinerary();
   } catch (error) {
@@ -296,6 +315,8 @@ async function fetchAndRenderItinerary() {
 async function regenerateItinerary() {
   itineraryData = null;
   flatPlaces = [];
+  sessionStorage.removeItem("currentItinerary");
+  sessionStorage.removeItem("currentFlatPlaces");
   if (map) clearMap();
   renderItineraryLoading();
   await fetchAndRenderItinerary();
@@ -370,8 +391,11 @@ function renderItinerary() {
 
   itineraryData.forEach((day, dayIndex) => {
     const pref = dayPreferences[dayIndex];
-    const vibe = pref?.vibe || tripData.travelStyle || "adventure";
-    const dayBadge = vibe.charAt(0).toUpperCase() + vibe.slice(1);
+    const vibes = getDayVibes(pref);
+    const vibe = getPrimaryVibe(pref) || tripData.travelStyle || "adventure";
+    const dayBadge = vibes.length > 1
+      ? vibes.map((value) => value.charAt(0).toUpperCase() + value.slice(1)).join(" · ")
+      : vibe.charAt(0).toUpperCase() + vibe.slice(1);
 
     const card = document.createElement("div");
     card.className = "day-plan-card reveal";
@@ -659,12 +683,44 @@ function sendToWhatsApp() {
   window.open(url, "_blank");
 }
 
-function saveTrip() {
+async function saveTrip() {
   if (!itineraryData) {
     alert("Please wait for the trip plan to finish generating before saving.");
     return;
   }
+
+  const saveBtn = document.querySelector(".btn-save");
+  const saveStatus = document.getElementById("saveStatus");
+  const originalText = saveBtn.innerHTML;
+  
   try {
+    saveBtn.innerHTML = "Saving...";
+    saveBtn.disabled = true;
+
+    // Send the EXACT current state to the backend
+    const payload = {
+      tripData,
+      dayPreferences,
+      itinerary: itineraryData
+    };
+
+    const token = localStorage.getItem("token");
+    const headers = { "Content-Type": "application/json" };
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/trips/save`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to save trip: ${response.statusText}`);
+    }
+
+    // Also update locally for immediate UI response if needed
     const saved = JSON.parse(localStorage.getItem("savedTrips") || "[]");
     const tripEntry = {
       id: Date.now(),
@@ -675,15 +731,40 @@ function saveTrip() {
     };
     saved.push(tripEntry);
     localStorage.setItem("savedTrips", JSON.stringify(saved));
-    alert("Trip saved successfully! ✅");
+
+    if (saveStatus) {
+      saveStatus.hidden = false;
+      saveStatus.className = "form-status success";
+      saveStatus.textContent = "Trip saved successfully! ✅";
+      setTimeout(() => { saveStatus.hidden = true; }, 3000);
+    } else {
+      alert("Trip saved successfully! ✅");
+    }
   } catch (err) {
     console.error("saveTrip failed:", err);
-    alert("Could not save the trip locally. Your browser storage may be full.");
+    if (saveStatus) {
+      saveStatus.hidden = false;
+      saveStatus.className = "form-status error";
+      saveStatus.textContent = "Could not save the trip. Please try again.";
+      setTimeout(() => { saveStatus.hidden = true; }, 3000);
+    } else {
+      alert("Could not save the trip. Please try again.");
+    }
+  } finally {
+    saveBtn.innerHTML = originalText;
+    saveBtn.disabled = false;
   }
 }
 
+// Clears ALL auth keys so user is fully signed out everywhere
 function handleSignOut() {
+  localStorage.removeItem("token");
   localStorage.removeItem("isLoggedIn");
+  localStorage.removeItem("userName");
+  localStorage.removeItem("userEmail");
+  localStorage.removeItem("userId");
+  localStorage.removeItem("userPhone");
+  localStorage.removeItem("userAvatar");
   location.href = "index.html";
 }
 

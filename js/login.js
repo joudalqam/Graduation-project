@@ -38,6 +38,12 @@ if (darkToggle) {
 // ──────────────────────────────────────────────────────────────────
 let isSignUp = false;
 
+function setupAuthValidation() {
+  if (!window.FormValidation) return;
+
+  window.FormValidation.bindLiveValidation(document.getElementById('authForm'));
+}
+
 function switchTab(tab) {
   isSignUp = tab === "signup";
 
@@ -665,6 +671,7 @@ async function checkAuth() {
 // ──────────────────────────────────────────────────────────────────
 // Boot
 // ──────────────────────────────────────────────────────────────────
+// ── Boot ─────────────────────────────────────────────────────────────────────
 setupOtpInputs();
 loadVerificationConfig().then(() => {
   loadGoogleConfig().then(() => {
@@ -688,3 +695,4 @@ loadVerificationConfig().then(() => {
   });
 });
 checkAuth();
+

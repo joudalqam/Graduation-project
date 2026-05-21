@@ -16,8 +16,10 @@ import tripsRoutes from "./routes/trips.js";
 import authRoutes from "./routes/auth.js";
 import aiRoutes from "./routes/aiRoutes.js";
 import { notFound, errorHandler } from "./middlewares/errorMiddleware.js";
+import { diagnoseEmailConfig } from "./services/emailService.js";
 
 printStartupBanner();
+diagnoseEmailConfig();
 
 const PORT = getPort();
 
@@ -25,15 +27,19 @@ const app = express();
 
 app.use(
   cors({
-    origin: [
-      "http://127.0.0.1:5500",
-      "http://localhost:5500",
-      "http://127.0.0.1:5501",
-      "http://localhost:5501",
-    ],
+    origin: (origin, callback) => {
+      // Allow requests with no origin (curl, Postman, mobile apps)
+      if (!origin) return callback(null, true);
+      // Allow any localhost or 127.0.0.1 origin regardless of port
+      if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
+        return callback(null, true);
+      }
+      callback(new Error(`CORS: origin '${origin}' not allowed`));
+    },
     credentials: true,
   })
 );
+
 app.use(express.json());
 
 app.use((req, _res, next) => {
