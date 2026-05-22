@@ -27,6 +27,10 @@ const userSchema = new mongoose.Schema(
       trim: true,
       default: "",
     },
+    whatsappNumber: {
+      type: String,
+      default: null,
+    },
     authProvider: {
       type: String,
       enum: ["local", "google"],

@@ -16,6 +16,7 @@ import tripRoutes from "./routes/tripRoutes.js";
 import tripsRoutes from "./routes/trips.js";
 import authRoutes from "./routes/auth.js";
 import aiRoutes from "./routes/aiRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
 import { notFound, errorHandler } from "./middlewares/errorMiddleware.js";
 import { diagnoseEmailConfig } from "./services/emailService.js";
 
@@ -50,6 +51,7 @@ app.use("/api/places", placesRoutes);
 app.use("/api/itinerary", itineraryRoutes);
 app.use("/api/trips", tripsRoutes);
 app.use("/api/ai", aiRoutes);
+app.use("/api/user", userRoutes);
 app.use("/api", tripRoutes);
 
 app.get("/", (_req, res) => res.json({ message: "API running" }));

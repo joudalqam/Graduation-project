@@ -191,6 +191,21 @@ function clearOtpCells(containerEl) {
 document.addEventListener("DOMContentLoaded", () => {
   wireOtpCells(document.getElementById("otpInputs"));
   wireOtpCells(document.getElementById("resetOtpInputs"));
+
+  const passwordInput = document.getElementById("password");
+  const passwordToggle = document.getElementById("passwordToggle");
+  if (passwordInput && passwordToggle) {
+    const eyeIcon = passwordToggle.querySelector(".icon-eye");
+    const eyeOffIcon = passwordToggle.querySelector(".icon-eye-off");
+    passwordToggle.addEventListener("click", () => {
+      const isHidden = passwordInput.type === "password";
+      passwordInput.type = isHidden ? "text" : "password";
+      eyeIcon.classList.toggle("hidden", isHidden);
+      eyeOffIcon.classList.toggle("hidden", !isHidden);
+      passwordToggle.setAttribute("aria-pressed", String(isHidden));
+      passwordToggle.setAttribute("aria-label", isHidden ? "Hide password" : "Show password");
+    });
+  }
 });
 
 // ── Countdown helpers ──
@@ -367,39 +382,8 @@ async function handleResendCode() {
 }
 
 // ── Dark Mode ──
-function updateLogo(isDark) {
-  const logo = document.getElementById("logoImg");
-  if (!logo) return;
-  logo.src = isDark ? "white.png" : "blue.png";
-}
-
-(function initDarkMode() {
-  const saved = localStorage.getItem("darkMode");
-  if (saved === "enabled") {
-    document.body.classList.add("dark");
-    const moon = document.getElementById("moonIcon");
-    const sun = document.getElementById("sunIcon");
-    if (moon) moon.style.display = "none";
-    if (sun) sun.style.display = "block";
-    updateLogo(true);
-  } else {
-    updateLogo(false);
-  }
-})();
-
-const darkToggleBtn = document.getElementById("darkToggle");
-if (darkToggleBtn) {
-  darkToggleBtn.addEventListener("click", function () {
-    document.body.classList.toggle("dark");
-    const isDark = document.body.classList.contains("dark");
-    localStorage.setItem("darkMode", isDark ? "enabled" : "disabled");
-    const moon = document.getElementById("moonIcon");
-    const sun = document.getElementById("sunIcon");
-    if (moon) moon.style.display = isDark ? "none" : "block";
-    if (sun) sun.style.display = isDark ? "block" : "none";
-    updateLogo(isDark);
-  });
-}
+// Handled by initDarkModeGlobal() in js/utils.js, called by js/layout.js
+// after the shared navbar is injected. No page-specific init needed.
 
 // ── Tabs ──
 let isSignUp = false;

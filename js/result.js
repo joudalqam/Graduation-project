@@ -642,22 +642,68 @@ function focusPlaceOnMap(globalIndex) {
 //  SEND TO WHATSAPP  — calls the bot API
 //  (NOT wa.me — the bot sends messages directly)
 // ─────────────────────────────────────────
+
+// undefined = not yet fetched, null = fetched and empty, string = saved number
+let cachedWhatsappNumber = undefined;
+
+async function fetchSavedWhatsappNumber() {
+  const token = localStorage.getItem("token");
+  if (!token) return null;
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/user/whatsapp`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data?.whatsappNumber ?? null;
+  } catch {
+    return null;
+  }
+}
+
+async function saveWhatsappNumber(number) {
+  const token = localStorage.getItem("token");
+  if (!token) return false;
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/user/whatsapp`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ whatsappNumber: number }),
+    });
+    const data = await res.json().catch(() => ({}));
+    return Boolean(res.ok && data?.success);
+  } catch {
+    return false;
+  }
+}
+
 async function sendToWhatsApp() {
   if (!itineraryData) {
     alert("⏳ Please wait for the itinerary to load first.");
     return;
   }
 
-  // Get phone from localStorage or prompt user
-  let userPhone = localStorage.getItem("userPhone");
+  // Get phone from saved profile (one-time prompt + persist if missing)
+  if (cachedWhatsappNumber === undefined) {
+    cachedWhatsappNumber = await fetchSavedWhatsappNumber();
+  }
+  let userPhone = cachedWhatsappNumber;
   if (!userPhone) {
-    userPhone = prompt(
+    const entered = prompt(
       "📱 Enter your WhatsApp number (with country code, e.g. 9627XXXXXXXX):",
     );
-    if (!userPhone) return; // user pressed Cancel
-    userPhone = userPhone.trim();
+    if (!entered) return; // user pressed Cancel
+    userPhone = entered.trim();
     if (!userPhone) return; // user submitted blank
-    localStorage.setItem("userPhone", userPhone);
+    const saved = await saveWhatsappNumber(userPhone);
+    if (saved) {
+      cachedWhatsappNumber = userPhone;
+    }
+    // If save failed (network/auth), continue with the entered number anyway
+    // so this click still works; next click will retry the fetch.
   }
 
   // Show loading state on button
@@ -871,3 +917,8 @@ window.saveTrip = saveTrip;
 window.handleSignOut = handleSignOut;
 window.regenerateItinerary = regenerateItinerary;
 document.addEventListener("DOMContentLoaded", init);
+
+// Prefetch saved WhatsApp number so the first click is instant.
+fetchSavedWhatsappNumber().then((n) => {
+  cachedWhatsappNumber = n;
+});

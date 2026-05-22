@@ -209,12 +209,7 @@
     <nav class="navbar">
       <div class="navbar-inner">
         <a href="index.html" class="navbar-logo">
-          <img
-            src="blue.png"
-            id="logoImg"
-            alt="Trip Planner Logo"
-            style="height: 36px; border-radius: 8px"
-          />
+          <img src="./blue.png" alt="Trip Planner" class="navbar-logo-image" id="logoImg" />
           <span class="navbar-logo-text">Trip Planner</span>
         </a>
 
@@ -378,11 +373,10 @@
     <script src="js/utils.js"></script>
     <script>
       // ── Logo helper ──
-      function updateLogo(isDark) {
-        const logo = document.getElementById("logoImg");
-        if (!logo) return;
-        logo.src = isDark ? "white.png" : "blue.png";
-      }
+      // No-op: navbar/footer logo color is driven by the CSS variable
+      // --logo-filter on .navbar-logo-image (see styles.css), matching all
+      // other pages. Keep blue.png as the single source.
+      function updateLogo(isDark) {}
 
       // ── Init dark mode on page load ──
       (function () {
@@ -430,7 +424,43 @@
         updateLogo(isDark);
       }
 
-      // ── Load user info from localStorage ──
+      const API_BASE_URL = "http://localhost:5000";
+
+      async function fetchSavedWhatsappNumber() {
+        const token = localStorage.getItem("token");
+        if (!token) return null;
+        try {
+          const res = await fetch(`${API_BASE_URL}/api/user/whatsapp`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (!res.ok) return null;
+          const data = await res.json();
+          return data?.whatsappNumber ?? null;
+        } catch {
+          return null;
+        }
+      }
+
+      async function saveWhatsappNumber(number) {
+        const token = localStorage.getItem("token");
+        if (!token) return false;
+        try {
+          const res = await fetch(`${API_BASE_URL}/api/user/whatsapp`, {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ whatsappNumber: number }),
+          });
+          const data = await res.json().catch(() => ({}));
+          return Boolean(res.ok && data?.success);
+        } catch {
+          return false;
+        }
+      }
+
+      // ── Load user info ──
       function loadUserInfo() {
         const token = localStorage.getItem("token");
         if (!token) {
@@ -440,7 +470,6 @@
 
         const userName = localStorage.getItem("userName") || "User";
         const userEmail = localStorage.getItem("userEmail") || "—";
-        const userPhone = localStorage.getItem("userPhone") || "—";
         const memberDate = localStorage.getItem("memberDate") || "—";
 
         document.getElementById("settingsAvatar").textContent = userName
@@ -450,12 +479,21 @@
         document.getElementById("settingsEmail").textContent = userEmail;
         document.getElementById("displayName").textContent = userName;
         document.getElementById("displayEmail").textContent = userEmail;
-        document.getElementById("displayPhone").textContent = userPhone;
         document.getElementById("memberDate").textContent = memberDate;
+
+        // WhatsApp number — server is source of truth
+        const cached = localStorage.getItem("userPhone");
+        document.getElementById("displayPhone").textContent = cached || "—";
+        fetchSavedWhatsappNumber().then((saved) => {
+          document.getElementById("displayPhone").textContent = saved || "—";
+          if (saved) {
+            localStorage.setItem("userPhone", saved);
+          }
+        });
       }
 
       // ── Edit fields ──
-      function editField(field) {
+      async function editField(field) {
         const labels = {
           name: "Full Name",
           email: "Email Address",
@@ -463,16 +501,23 @@
         };
         const value = prompt(`Enter new ${labels[field]}:`);
         if (!value || !value.trim()) return;
+        const trimmed = value.trim();
 
         if (field === "name") {
-          localStorage.setItem("userName", value.trim());
+          localStorage.setItem("userName", trimmed);
+          loadUserInfo();
         } else if (field === "email") {
-          localStorage.setItem("userEmail", value.trim());
+          localStorage.setItem("userEmail", trimmed);
+          loadUserInfo();
         } else if (field === "phone") {
-          localStorage.setItem("userPhone", value.trim());
+          const ok = await saveWhatsappNumber(trimmed);
+          if (!ok) {
+            alert("❌ Could not save WhatsApp number. Please try again.");
+            return;
+          }
+          localStorage.setItem("userPhone", trimmed);
+          document.getElementById("displayPhone").textContent = trimmed;
         }
-
-        loadUserInfo();
       }
 
       // ── Logout ──

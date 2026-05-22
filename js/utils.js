@@ -110,9 +110,9 @@ function showToast(message, type = 'success', duration = 3000) {
   // Storage key: 'darkMode'  Values: 'enabled' | 'disabled'
 
   function updateLogo(isDark) {
-    const logo = document.getElementById('logoImg')
-    if (!logo) return
-    logo.src = isDark ? 'white.png' : 'blue.png'
+    // Logo color is driven entirely by the CSS variable --logo-filter
+    // on .navbar-logo-image, so the navbar and footer logos stay in sync.
+    // No src swap — keep blue.png as the single source.
   }
 
   function applyTheme(isDark) {

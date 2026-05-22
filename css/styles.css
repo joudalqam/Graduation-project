@@ -1131,6 +1131,46 @@ body.dark .login-logo span { color: #ffffff; }
   border-color: var(--teal);
 }
 
+.input-with-icon .password-toggle {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  padding: 6px;
+  cursor: pointer;
+  color: var(--teal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+}
+
+.input-with-icon .password-toggle:hover {
+  background: rgba(10, 191, 188, 0.08);
+}
+
+.input-with-icon .password-toggle:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 1px;
+}
+
+.input-with-icon .password-toggle svg {
+  position: static;
+  left: auto;
+  transform: none;
+  width: 18px;
+  height: 18px;
+  color: var(--teal);
+  stroke: var(--teal);
+}
+
+.input-with-icon input:has(+ .password-toggle),
+.input-with-icon input[id="password"] {
+  padding-right: 44px;
+}
+
 .forgot-link {
   text-align: right;
   margin-top: 4px;
