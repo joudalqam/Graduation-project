@@ -5,6 +5,7 @@ import mongoose from "mongoose";
 import User from "../models/User.js";
 import {
   sendVerificationEmail,
+  sendPasswordResetEmail,
   generateVerificationCode,
 } from "../services/emailService.js";
 import { verifyGoogleIdToken } from "../services/googleAuthService.js";
@@ -25,11 +26,18 @@ const resendCooldownMs = () => {
   return seconds * 1000;
 };
 
-const signToken = (userId) => {
+const signToken = (user) => {
   if (!process.env.JWT_SECRET) {
     throw new Error("JWT_SECRET is not set in environment");
   }
-  return jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: "7d" });
+  // Embed verification status so authMiddleware can reject tokens belonging
+  // to accounts that lost verification (defense-in-depth — every issue path
+  // already gates on isVerified, but the JWT claim makes it tamper-evident).
+  return jwt.sign(
+    { id: user._id, verified: Boolean(user.isVerified) },
+    process.env.JWT_SECRET,
+    { expiresIn: "7d" }
+  );
 };
 
 const ensureDbReady = (res) => {
@@ -45,6 +53,16 @@ const ensureDbReady = (res) => {
 const sanitizeString = (value, max = 200) =>
   typeof value === "string" ? value.trim().slice(0, max) : "";
 
+// Surface the underlying SMTP error in the API response in non-production.
+// In production we hide it so we don't leak SMTP infra details to clients.
+const emailFailurePayload = (userMessage, err) => {
+  const payload = { message: userMessage };
+  if (process.env.NODE_ENV !== "production" && err?.message) {
+    payload.debug = err.message;
+  }
+  return payload;
+};
+
 const publicUser = (user) => ({
   id: user._id,
   name: user.name,
@@ -55,19 +73,25 @@ const publicUser = (user) => ({
   authProvider: user.authProvider || "local",
 });
 
-const issueVerificationCode = async (user) => {
-  const cooldown = resendCooldownMs();
-  if (
-    user.lastVerificationSentAt &&
-    Date.now() - new Date(user.lastVerificationSentAt).getTime() < cooldown
-  ) {
-    const waitMs =
-      cooldown - (Date.now() - new Date(user.lastVerificationSentAt).getTime());
-    const error = new Error(
-      `Please wait ${Math.ceil(waitMs / 1000)}s before requesting a new code.`
-    );
-    error.status = 429;
-    throw error;
+// `enforceCooldown` gates the 30s resend rate-limit. Automatic flows
+// (register / login / google) MUST always send a fresh code on every attempt —
+// they pass `enforceCooldown: false`. Only the user-initiated /resend-code
+// button keeps the cooldown to prevent button-mash abuse.
+const issueVerificationCode = async (user, { enforceCooldown = true } = {}) => {
+  if (enforceCooldown) {
+    const cooldown = resendCooldownMs();
+    if (
+      user.lastVerificationSentAt &&
+      Date.now() - new Date(user.lastVerificationSentAt).getTime() < cooldown
+    ) {
+      const waitMs =
+        cooldown - (Date.now() - new Date(user.lastVerificationSentAt).getTime());
+      const error = new Error(
+        `Please wait ${Math.ceil(waitMs / 1000)}s before requesting a new code.`
+      );
+      error.status = 429;
+      throw error;
+    }
   }
 
   const code = generateVerificationCode();
@@ -81,6 +105,40 @@ const issueVerificationCode = async (user) => {
   await user.save();
 
   const result = await sendVerificationEmail({
+    to: user.email,
+    name: user.name,
+    code,
+  });
+
+  return result;
+};
+
+const issuePasswordResetCode = async (user) => {
+  const cooldown = resendCooldownMs();
+  if (
+    user.lastPasswordResetSentAt &&
+    Date.now() - new Date(user.lastPasswordResetSentAt).getTime() < cooldown
+  ) {
+    const waitMs =
+      cooldown - (Date.now() - new Date(user.lastPasswordResetSentAt).getTime());
+    const error = new Error(
+      `Please wait ${Math.ceil(waitMs / 1000)}s before requesting a new code.`
+    );
+    error.status = 429;
+    throw error;
+  }
+
+  const code = generateVerificationCode();
+  const salt = await bcrypt.genSalt(10);
+  const hash = await bcrypt.hash(code, salt);
+
+  user.passwordResetCodeHash = hash;
+  user.passwordResetCodeExpires = new Date(Date.now() + codeTtlMs());
+  user.passwordResetAttempts = 0;
+  user.lastPasswordResetSentAt = new Date();
+  await user.save();
+
+  const result = await sendPasswordResetEmail({
     to: user.email,
     name: user.name,
     code,
@@ -146,12 +204,19 @@ router.post("/register", async (req, res) => {
       }
 
       try {
-        await issueVerificationCode(existing);
+        // Re-registering always sends a fresh code — bypass cooldown.
+        await issueVerificationCode(existing, { enforceCooldown: false });
       } catch (err) {
         if (err.status === 429) {
           return res.status(429).json({ message: err.message });
         }
-        throw err;
+        console.error("❌ Failed to resend verification email (existing unverified):", err);
+        return res.status(502).json(
+          emailFailurePayload(
+            "We couldn't send the verification email. Please try again in a moment.",
+            err
+          )
+        );
       }
 
       return res.status(200).json({
@@ -175,15 +240,18 @@ router.post("/register", async (req, res) => {
     });
 
     try {
-      await issueVerificationCode(user);
+      // New account always sends a fresh code — bypass cooldown.
+      await issueVerificationCode(user, { enforceCooldown: false });
     } catch (err) {
       // Roll back the created user if e-mail sending fails so they can retry.
       await User.deleteOne({ _id: user._id }).catch(() => {});
       console.error("❌ Failed to send verification email:", err);
-      return res.status(502).json({
-        message:
+      return res.status(502).json(
+        emailFailurePayload(
           "We couldn't send the verification email. Please try again in a moment.",
-      });
+          err
+        )
+      );
     }
 
     return res.status(201).json({
@@ -245,7 +313,8 @@ router.post("/login", async (req, res) => {
 
     if (!user.isVerified) {
       try {
-        await issueVerificationCode(user);
+        // Login MUST send a fresh code every time — bypass cooldown.
+        await issueVerificationCode(user, { enforceCooldown: false });
       } catch (err) {
         if (err.status === 429) {
           return res.status(202).json({
@@ -254,7 +323,13 @@ router.post("/login", async (req, res) => {
             message: err.message,
           });
         }
-        throw err;
+        console.error("❌ Failed to send verification email (login):", err);
+        return res.status(502).json(
+          emailFailurePayload(
+            "We couldn't send the verification email. Please try again in a moment.",
+            err
+          )
+        );
       }
       return res.status(202).json({
         pendingVerification: true,
@@ -264,7 +339,7 @@ router.post("/login", async (req, res) => {
       });
     }
 
-    const token = signToken(user._id);
+    const token = signToken(user);
     return res.status(200).json({ token, user: publicUser(user) });
   } catch (err) {
     console.error("❌ Login error:", err);
@@ -307,6 +382,11 @@ router.post("/google", async (req, res) => {
       "+verificationCodeHash +verificationCodeExpires +verificationAttempts +lastVerificationSentAt"
     );
 
+    // Google already verifies the inbox before issuing an ID token; we still
+    // require our own 6-digit code on every Google login (see below) but we
+    // also persist the Google-verified state on the user record.
+    const trustGoogleVerification = profile.emailVerifiedByGoogle === true;
+
     if (!user) {
       user = await User.create({
         name: profile.name,
@@ -314,7 +394,7 @@ router.post("/google", async (req, res) => {
         authProvider: "google",
         googleId: profile.googleId,
         avatar: profile.avatar,
-        isVerified: false,
+        isVerified: trustGoogleVerification,
       });
     } else {
       // Link Google to an existing account
@@ -324,31 +404,37 @@ router.post("/google", async (req, res) => {
       if (user.authProvider !== "google" && !user.password) {
         user.authProvider = "google";
       }
+      if (trustGoogleVerification && !user.isVerified) {
+        user.isVerified = true;
+      }
       await user.save();
     }
 
-    if (!user.isVerified) {
-      try {
-        await issueVerificationCode(user);
-      } catch (err) {
-        if (err.status === 429) {
-          return res.status(202).json({
-            pendingVerification: true,
-            email: user.email,
-            message: err.message,
-          });
-        }
-        throw err;
+    // Google sign-in ALWAYS requires a fresh OTP, even if the account is
+    // already marked verified — verification must run on every Google login.
+    try {
+      await issueVerificationCode(user, { enforceCooldown: false });
+    } catch (err) {
+      if (err.status === 429) {
+        return res.status(202).json({
+          pendingVerification: true,
+          email: user.email,
+          message: err.message,
+        });
       }
-      return res.status(202).json({
-        pendingVerification: true,
-        email: user.email,
-        message: "Verification code sent to your email.",
-      });
+      console.error("❌ Failed to send verification email (google):", err);
+      return res.status(502).json(
+        emailFailurePayload(
+          "We couldn't send the verification email. Please try again in a moment.",
+          err
+        )
+      );
     }
-
-    const token = signToken(user._id);
-    return res.status(200).json({ token, user: publicUser(user) });
+    return res.status(202).json({
+      pendingVerification: true,
+      email: user.email,
+      message: "Verification code sent to your email.",
+    });
   } catch (err) {
     console.error("❌ Google auth error:", err);
     return res
@@ -387,12 +473,13 @@ router.post("/verify-code", async (req, res) => {
       return res.status(404).json({ message: "No account found for that email." });
     }
 
-    if (user.isVerified) {
-      const token = signToken(user._id);
-      return res.status(200).json({ token, user: publicUser(user) });
-    }
-
     if (!user.verificationCodeHash || !user.verificationCodeExpires) {
+      // No active code. If the account is already verified (legacy / no
+      // pending OTP) honor that and issue a token. Otherwise require a code.
+      if (user.isVerified) {
+        const token = signToken(user);
+        return res.status(200).json({ token, user: publicUser(user) });
+      }
       return res
         .status(400)
         .json({ message: "No active verification code. Please request a new one." });
@@ -432,7 +519,7 @@ router.post("/verify-code", async (req, res) => {
     user.verificationAttempts = 0;
     await user.save();
 
-    const token = signToken(user._id);
+    const token = signToken(user);
     return res.status(200).json({ token, user: publicUser(user) });
   } catch (err) {
     console.error("❌ Verify code error:", err);
@@ -472,22 +559,177 @@ router.post("/resend-code", async (req, res) => {
     }
 
     try {
-      const result = await issueVerificationCode(user);
+      await issueVerificationCode(user);
       return res.status(200).json({
         message: "A new verification code has been sent to your email.",
-        previewUrl: result.previewUrl || undefined,
       });
     } catch (err) {
       if (err.status === 429) {
         return res.status(429).json({ message: err.message });
       }
-      throw err;
+      console.error("❌ Failed to resend verification email:", err);
+      return res.status(502).json(
+        emailFailurePayload(
+          "We couldn't send the verification email. Please try again in a moment.",
+          err
+        )
+      );
     }
   } catch (err) {
     console.error("❌ Resend code error:", err);
     return res
       .status(500)
       .json({ message: "Server error while resending code." });
+  }
+});
+
+// ──────────────────────────────────────────────────────────────────
+// POST /api/auth/forgot-password
+// Body: { email }
+// Always returns 200 with a generic message to avoid user enumeration.
+// ──────────────────────────────────────────────────────────────────
+router.post("/forgot-password", async (req, res) => {
+  try {
+    if (!ensureDbReady(res)) return;
+
+    const emailRaw = sanitizeString(req.body?.email, 200);
+    if (!emailRaw) {
+      return res.status(400).json({ message: "Email is required." });
+    }
+    const email = emailRaw.toLowerCase();
+    if (!EMAIL_REGEX.test(email)) {
+      return res.status(400).json({ message: "Please enter a valid email address." });
+    }
+
+    const genericResponse = {
+      message:
+        "If an account exists for that email, a reset code has been sent.",
+    };
+
+    const user = await User.findOne({ email }).select(
+      "+passwordResetCodeHash +passwordResetCodeExpires +passwordResetAttempts +lastPasswordResetSentAt password authProvider name email"
+    );
+    if (!user) return res.status(200).json(genericResponse);
+
+    // Google-only accounts have no local password to reset.
+    if (user.authProvider === "google" && !user.password) {
+      return res.status(200).json(genericResponse);
+    }
+
+    try {
+      await issuePasswordResetCode(user);
+    } catch (err) {
+      if (err.status === 429) {
+        return res.status(429).json({ message: err.message });
+      }
+      console.error("❌ Failed to send password reset email:", err);
+      return res.status(502).json(
+        emailFailurePayload(
+          "We couldn't send the reset email. Please try again in a moment.",
+          err
+        )
+      );
+    }
+
+    return res.status(200).json(genericResponse);
+  } catch (err) {
+    console.error("❌ Forgot password error:", err);
+    return res
+      .status(500)
+      .json({ message: "Server error during password reset request." });
+  }
+});
+
+// ──────────────────────────────────────────────────────────────────
+// POST /api/auth/reset-password
+// Body: { email, code, newPassword }
+// On success: sets new password, marks isVerified, returns JWT (auto-login).
+// ──────────────────────────────────────────────────────────────────
+router.post("/reset-password", async (req, res) => {
+  try {
+    if (!ensureDbReady(res)) return;
+
+    const emailRaw = sanitizeString(req.body?.email, 200);
+    const code = sanitizeString(req.body?.code, 20);
+    const newPassword =
+      typeof req.body?.newPassword === "string" ? req.body.newPassword : "";
+
+    if (!emailRaw || !code || !newPassword) {
+      return res.status(400).json({
+        message: "Email, code and new password are required.",
+      });
+    }
+    if (!/^\d{6}$/.test(code)) {
+      return res.status(400).json({ message: "Code must be 6 digits." });
+    }
+    if (newPassword.length < MIN_PASSWORD_LENGTH) {
+      return res.status(400).json({
+        message: `Password must be at least ${MIN_PASSWORD_LENGTH} characters.`,
+      });
+    }
+
+    const email = emailRaw.toLowerCase();
+    const user = await User.findOne({ email }).select(
+      "+passwordResetCodeHash +passwordResetCodeExpires +passwordResetAttempts +lastPasswordResetSentAt password authProvider name email phone avatar googleId isVerified"
+    );
+    if (!user) {
+      return res
+        .status(400)
+        .json({ message: "Invalid or expired reset code." });
+    }
+
+    if (!user.passwordResetCodeHash || !user.passwordResetCodeExpires) {
+      return res
+        .status(400)
+        .json({ message: "No active reset code. Please request a new one." });
+    }
+
+    if (Date.now() > new Date(user.passwordResetCodeExpires).getTime()) {
+      return res
+        .status(400)
+        .json({ message: "Reset code expired. Please request a new one." });
+    }
+
+    if ((user.passwordResetAttempts || 0) >= MAX_VERIFICATION_ATTEMPTS) {
+      user.passwordResetCodeHash = null;
+      user.passwordResetCodeExpires = null;
+      await user.save();
+      return res.status(429).json({
+        message: "Too many failed attempts. Please request a new code.",
+      });
+    }
+
+    const match = await bcrypt.compare(code, user.passwordResetCodeHash);
+    if (!match) {
+      user.passwordResetAttempts = (user.passwordResetAttempts || 0) + 1;
+      await user.save();
+      const left = Math.max(
+        0,
+        MAX_VERIFICATION_ATTEMPTS - user.passwordResetAttempts
+      );
+      return res.status(400).json({
+        message: `Incorrect code. ${left} attempt${left === 1 ? "" : "s"} left.`,
+      });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, salt);
+    user.passwordResetCodeHash = null;
+    user.passwordResetCodeExpires = null;
+    user.passwordResetAttempts = 0;
+    user.lastPasswordResetSentAt = null;
+    // Successful reset proves email ownership — mark the account verified.
+    user.isVerified = true;
+    if (user.authProvider !== "google") user.authProvider = "local";
+    await user.save();
+
+    const token = signToken(user);
+    return res.status(200).json({ token, user: publicUser(user) });
+  } catch (err) {
+    console.error("❌ Reset password error:", err);
+    return res
+      .status(500)
+      .json({ message: "Server error during password reset." });
   }
 });
 

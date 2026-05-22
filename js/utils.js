@@ -104,26 +104,51 @@ function showToast(message, type = 'success', duration = 3000) {
     return true
   }
   
-  // ── DARK MODE SYNC ────────────────────────
-  function initDarkModeGlobal() {
-    const saved = localStorage.getItem('darkMode')
-    if (saved === 'true') {
+  // ── DARK MODE ─────────────────────────────
+  // Single source of truth for theme switching.
+  // Class used: body.dark  (matches all CSS rules in styles.css)
+  // Storage key: 'darkMode'  Values: 'enabled' | 'disabled'
+
+  function updateLogo(isDark) {
+    const logo = document.getElementById('logoImg')
+    if (!logo) return
+    logo.src = isDark ? 'white.png' : 'blue.png'
+  }
+
+  function applyTheme(isDark) {
+    if (isDark) {
       document.body.classList.add('dark')
-      const moon = document.getElementById('moonIcon')
-      const sun = document.getElementById('sunIcon')
-      if (moon) moon.style.display = 'none'
-      if (sun) sun.style.display = 'block'
+    } else {
+      document.body.classList.remove('dark')
     }
-  
+
+    const moon = document.getElementById('moonIcon')
+    const sun  = document.getElementById('sunIcon')
+    if (moon) moon.style.display = isDark ? 'none'  : 'block'
+    if (sun)  sun.style.display  = isDark ? 'block' : 'none'
+
+    updateLogo(isDark)
+  }
+
+  // Called by layout.js after the navbar has been injected into the DOM,
+  // so #darkToggle, #moonIcon, #sunIcon are guaranteed to exist.
+  function initDarkModeGlobal() {
+    // 1. Restore saved preference (default = light if nothing saved)
+    const saved = localStorage.getItem('darkMode')
+    const isDark = saved === 'enabled'
+    applyTheme(isDark)
+
+    // 2. Wire up the toggle button
     const toggle = document.getElementById('darkToggle')
     if (toggle) {
-      toggle.addEventListener('click', function () {
-        const isDark = document.body.classList.toggle('dark')
-        localStorage.setItem('darkMode', isDark)
-        const moon = document.getElementById('moonIcon')
-        const sun = document.getElementById('sunIcon')
-        if (moon) moon.style.display = isDark ? 'none' : 'block'
-        if (sun) sun.style.display = isDark ? 'block' : 'none'
+      // Remove any previously-attached listener to avoid duplicates
+      toggle.replaceWith(toggle.cloneNode(true))
+      const freshToggle = document.getElementById('darkToggle')
+
+      freshToggle.addEventListener('click', function () {
+        const nowDark = !document.body.classList.contains('dark')
+        localStorage.setItem('darkMode', nowDark ? 'enabled' : 'disabled')
+        applyTheme(nowDark)
       })
     }
   }

@@ -16,7 +16,7 @@
   <nav class="navbar">
     <div class="navbar-inner">
       <a href="index.html" class="navbar-logo">
-        <img src="./logo_trip_planner.png" alt="Trip Planner" class="navbar-logo-image" />
+        <img src="./blue.png" alt="Trip Planner" class="navbar-logo-image" id="logoImg" />
         <span class="navbar-logo-text">Trip Planner</span>
       </a>
 
@@ -73,7 +73,7 @@
     <div class="footer-grid">
       <div class="footer-brand">
         <a href="index.html" class="navbar-logo footer-logo">
-          <img src="./logo_trip_planner.png" alt="Trip Planner" class="navbar-logo-image" />
+          <img src="./blue.png" alt="Trip Planner" class="navbar-logo-image" />
           <span class="navbar-logo-text">Trip Planner</span>
         </a>
         <p>AI-powered personalized travel itineraries delivered straight to your WhatsApp.</p>

@@ -1,0 +1,95 @@
+2026/05/22-01:43:20.331 a5c Reusing MANIFEST C:\Users\pc\OneDrive\Desktop\Graduation-project\Graduation-project\backend\.wwebjs_auth\session\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/MANIFEST-000001
+2026/05/22-01:43:20.340 a5c Recovering log #3973
+2026/05/22-01:43:20.358 a5c Reusing old log C:\Users\pc\OneDrive\Desktop\Graduation-project\Graduation-project\backend\.wwebjs_auth\session\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/003973.log 
+2026/05/22-01:43:21.622 a5c Compacting 1@2 + 4@3 files
+2026/05/22-01:43:21.701 a5c Generated table #3994@2: 41201 keys, 2196968 bytes
+2026/05/22-01:43:21.768 a5c Generated table #3995@2: 62024 keys, 2230807 bytes
+2026/05/22-01:43:21.828 a5c Generated table #3996@2: 55853 keys, 2221007 bytes
+2026/05/22-01:43:21.871 a5c Generated table #3997@2: 70552 keys, 1454648 bytes
+2026/05/22-01:43:21.871 a5c Compacted 1@2 + 4@3 files => 8103430 bytes
+2026/05/22-01:43:21.872 a5c compacted to: files[ 0 4 48 20 0 0 0 ]
+2026/05/22-01:43:21.873 a5c Delete type=2 #3969
+2026/05/22-01:43:21.873 a5c Delete type=2 #3970
+2026/05/22-01:43:21.873 a5c Delete type=2 #3971
+2026/05/22-01:43:21.873 a5c Delete type=2 #3972
+2026/05/22-01:43:21.873 a5c Delete type=2 #3981
+2026/05/22-01:43:22.355 a5c Compacting 1@1 + 5@2 files
+2026/05/22-01:43:22.423 a5c Generated table #3998@1: 23073 keys, 2229737 bytes
+2026/05/22-01:43:22.476 a5c Generated table #3999@1: 24783 keys, 2302321 bytes
+2026/05/22-01:43:22.529 a5c Generated table #4000@1: 18881 keys, 2327288 bytes
+2026/05/22-01:43:22.572 a5c Generated table #4001@1: 19471 keys, 2262366 bytes
+2026/05/22-01:43:22.591 a5c Generated table #4002@1: 13408 keys, 925042 bytes
+2026/05/22-01:43:22.591 a5c Compacted 1@1 + 5@2 files => 10046754 bytes
+2026/05/22-01:43:22.592 a5c compacted to: files[ 0 3 48 20 0 0 0 ]
+2026/05/22-01:43:22.593 a5c Delete type=2 #3936
+2026/05/22-01:43:22.593 a5c Delete type=2 #3937
+2026/05/22-01:43:22.593 a5c Delete type=2 #3938
+2026/05/22-01:43:22.593 a5c Delete type=2 #3939
+2026/05/22-01:43:22.593 a5c Delete type=2 #3940
+2026/05/22-01:43:22.593 a5c Delete type=2 #3979
+2026/05/22-01:43:24.318 a5c Compacting 1@1 + 9@2 files
+2026/05/22-01:43:24.364 a5c Generated table #4003@1: 45275 keys, 2226794 bytes
+2026/05/22-01:43:24.436 a5c Generated table #4004@1: 23784 keys, 2279535 bytes
+2026/05/22-01:43:24.493 a5c Generated table #4005@1: 34994 keys, 2254230 bytes
+2026/05/22-01:43:24.545 a5c Generated table #4006@1: 22726 keys, 2283498 bytes
+2026/05/22-01:43:24.602 a5c Generated table #4007@1: 23861 keys, 2276175 bytes
+2026/05/22-01:43:24.669 a5c Generated table #4008@1: 34554 keys, 2251037 bytes
+2026/05/22-01:43:24.736 a5c Generated table #4009@1: 26619 keys, 2265880 bytes
+2026/05/22-01:43:24.791 a5c Generated table #4010@1: 29983 keys, 2255007 bytes
+2026/05/22-01:43:24.839 a5c Generated table #4011@1: 25232 keys, 2264205 bytes
+2026/05/22-01:43:24.839 a5c Compacted 1@1 + 9@2 files => 20356361 bytes
+2026/05/22-01:43:24.840 a5c compacted to: files[ 0 2 48 20 0 0 0 ]
+2026/05/22-01:43:24.841 a5c Delete type=2 #3941
+2026/05/22-01:43:24.841 a5c Delete type=2 #3942
+2026/05/22-01:43:24.841 a5c Delete type=2 #3943
+2026/05/22-01:43:24.841 a5c Delete type=2 #3944
+2026/05/22-01:43:24.841 a5c Delete type=2 #3945
+2026/05/22-01:43:24.841 a5c Delete type=2 #3946
+2026/05/22-01:43:24.841 a5c Delete type=2 #3947
+2026/05/22-01:43:24.841 a5c Delete type=2 #3948
+2026/05/22-01:43:24.841 a5c Delete type=2 #3949
+2026/05/22-01:43:24.841 a5c Delete type=2 #3978
+2026/05/22-01:43:44.861 30c8 Level-0 table #4013: started
+2026/05/22-01:43:44.892 30c8 Level-0 table #4013: 1132021 bytes OK
+2026/05/22-01:43:44.894 30c8 Delete type=0 #3973
+2026/05/22-01:43:44.895 a5c Compacting 1@0 + 2@1 files
+2026/05/22-01:43:44.919 a5c Generated table #4014@0: 36217 keys, 667976 bytes
+2026/05/22-01:43:44.936 a5c Generated table #4015@0: 1824 keys, 2156949 bytes
+2026/05/22-01:43:44.939 a5c Generated table #4016@0: 1 keys, 3615 bytes
+2026/05/22-01:43:44.948 a5c Generated table #4017@0: 38 keys, 2533 bytes
+2026/05/22-01:43:44.948 a5c Compacted 1@0 + 2@1 files => 2831073 bytes
+2026/05/22-01:43:44.950 a5c compacted to: files[ 0 4 48 20 0 0 0 ]
+2026/05/22-01:43:44.951 a5c Delete type=2 #3976
+2026/05/22-01:43:44.951 a5c Delete type=2 #3977
+2026/05/22-01:43:44.951 a5c Delete type=2 #4013
+2026/05/22-01:43:45.917 a5c Compacting 1@1 + 0@2 files
+2026/05/22-01:43:45.940 a5c Generated table #4018@1: 36108 keys, 655044 bytes
+2026/05/22-01:43:45.943 a5c Generated table #4019@1: 109 keys, 13194 bytes
+2026/05/22-01:43:45.943 a5c Compacted 1@1 + 0@2 files => 668238 bytes
+2026/05/22-01:43:45.945 a5c compacted to: files[ 0 3 50 20 0 0 0 ]
+2026/05/22-01:43:45.945 a5c Delete type=2 #4014
+2026/05/22-01:43:46.948 a5c Compacting 1@2 + 10@3 files
+2026/05/22-01:43:46.973 a5c Generated table #4020@2: 5359 keys, 2123004 bytes
+2026/05/22-01:43:47.005 a5c Generated table #4021@2: 9853 keys, 2133730 bytes
+2026/05/22-01:43:47.030 a5c Generated table #4022@2: 36410 keys, 2169408 bytes
+2026/05/22-01:43:47.077 a5c Generated table #4023@2: 106665 keys, 2259927 bytes
+2026/05/22-01:43:47.126 a5c Generated table #4024@2: 98518 keys, 2248363 bytes
+2026/05/22-01:43:47.178 a5c Generated table #4025@2: 99946 keys, 2249781 bytes
+2026/05/22-01:43:47.232 a5c Generated table #4026@2: 97920 keys, 2246756 bytes
+2026/05/22-01:43:47.275 a5c Generated table #4027@2: 99271 keys, 2248245 bytes
+2026/05/22-01:43:47.320 a5c Generated table #4028@2: 99634 keys, 2249643 bytes
+2026/05/22-01:43:47.360 a5c Generated table #4029@2: 83290 keys, 2230248 bytes
+2026/05/22-01:43:47.371 a5c Generated table #4030@2: 21682 keys, 474326 bytes
+2026/05/22-01:43:47.371 a5c Compacted 1@2 + 10@3 files => 22633431 bytes
+2026/05/22-01:43:47.372 a5c compacted to: files[ 0 3 49 21 0 0 0 ]
+2026/05/22-01:43:47.373 a5c Delete type=2 #3982
+2026/05/22-01:43:47.373 a5c Delete type=2 #3983
+2026/05/22-01:43:47.373 a5c Delete type=2 #3984
+2026/05/22-01:43:47.373 a5c Delete type=2 #3985
+2026/05/22-01:43:47.373 a5c Delete type=2 #3986
+2026/05/22-01:43:47.373 a5c Delete type=2 #3987
+2026/05/22-01:43:47.373 a5c Delete type=2 #3988
+2026/05/22-01:43:47.373 a5c Delete type=2 #3989
+2026/05/22-01:43:47.373 a5c Delete type=2 #3990
+2026/05/22-01:43:47.373 a5c Delete type=2 #3991
+2026/05/22-01:43:47.373 a5c Delete type=2 #4018

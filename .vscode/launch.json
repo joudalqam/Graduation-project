@@ -7,8 +7,9 @@
         {
             "type": "chrome",
             "request": "launch",
-            "name": "Open index.html",
-            "file": "c:\\Users\\HP\\AppData\\Local\\Packages\\5319275A.WhatsAppDesktop_cv1g1gvanyjgm\\LocalState\\sessions\\FE5BA1C1E54E4C0372906FBE955FD0461EEDDEA8\\transfers\\2026-13\\test\\index.html"
+            "name": "Open login.html via Live Server",
+            "url": "http://localhost:5500/login.html",
+            "webRoot": "${workspaceFolder}"
         }
     ]
 }

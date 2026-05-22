@@ -66,6 +66,26 @@ const userSchema = new mongoose.Schema(
       default: null,
       select: false,
     },
+    passwordResetCodeHash: {
+      type: String,
+      default: null,
+      select: false,
+    },
+    passwordResetCodeExpires: {
+      type: Date,
+      default: null,
+      select: false,
+    },
+    passwordResetAttempts: {
+      type: Number,
+      default: 0,
+      select: false,
+    },
+    lastPasswordResetSentAt: {
+      type: Date,
+      default: null,
+      select: false,
+    },
   },
   { timestamps: true }
 );

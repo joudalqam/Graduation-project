@@ -54,7 +54,9 @@ body.dark {
   --footer-text:    var(--navy);     /* Dark navy text */
   --footer-muted:   #6b7280;         /* Muted gray for secondary text/links */
   --footer-border:  #e5e7eb;         /* Subtle border separator */
-  --footer-icon:    #6b7280;         /* Social icon color */
+  --footer-icon:    #6b7280;         /* Muted gray icons */
+  --logo-filter:    none;   /* Logo filter (keep original color in light mode) */
+  --logo-text-color:var(--navy);         /* Logo text color (navy in light mode) */
 }
 
 body.dark {
@@ -67,6 +69,8 @@ body.dark {
   --footer-muted:   rgba(255,255,255,0.65); /* Muted white for secondary text */
   --footer-border:  rgba(255,255,255,0.1);  /* Subtle white border */
   --footer-icon:    rgba(255,255,255,0.7);  /* Social icon color */
+  --logo-filter:    brightness(0) invert(1);/* Logo filter (white in dark mode) */
+  --logo-text-color:#ffffff;                /* Logo text color (white in dark mode) */
 }
 
 /* ===== NAVBAR SECTION =====
@@ -112,32 +116,26 @@ body.dark .navbar {
   mix-blend-mode: normal;
   mask-image: none;
   -webkit-mask-image: none;
-  /* Light mode: tint logo teal so it is visible on the white navbar */
-  filter: brightness(0) saturate(100%) invert(62%) sepia(98%) saturate(380%) hue-rotate(138deg) brightness(97%) contrast(98%);
+  /* Logo filter changes based on theme */
+  filter: var(--logo-filter);
   will-change: filter;
   margin: -10px 0;
   transition: filter 0.3s;
 }
 
-/* Dark mode navbar: logo becomes pure white on the dark (#1E293B) background */
-body.dark .navbar-logo-image {
-  mix-blend-mode: normal;
-  filter: brightness(0) invert(1);
-}
+/* Dark mode navbar logo filter handled by CSS variable */
 
 /* Footer logo inherits the same filter/color as the navbar logo in each theme.
    No override needed — .navbar-logo-image and .navbar-logo-text handle both modes. */
 
-/* Logo text: teal in light mode (matches Send Message button accent), white in dark mode */
+/* Logo text color changes based on theme */
 .navbar-logo-text {
   font-family: 'DM Sans', sans-serif;
   font-weight: 700;
   font-size: 1.4rem;
-  color: var(--teal);        /* Matches button accent — visible on white navbar */
+  color: var(--logo-text-color);
   transition: color 0.3s;
 }
-
-body.dark .navbar-logo-text { color: #fff; }
 
 /* Footer logo text: follows .navbar-logo-text — teal in light, white in dark.
    No separate override needed. */
@@ -509,6 +507,7 @@ body.dark #contact .section-heading p {
   width: 100%;
   line-height: 1;
   pointer-events: none;
+  color: rgba(28, 43, 74, 0.05); /* faint navy watermark in light mode */
 }
 
 /* body.dark #contact .section-heading .display color is set near the #contact rule above */
